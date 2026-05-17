@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docobj
+
+# Temp / backup files
+*.tmp
+*.Backup.tmp
+
+# Rider
+.idea/
+
+# Claude Code
+.claude/
