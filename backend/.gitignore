@@ -1,20 +1,14 @@
-# Build output
-bin/
-obj/
+node_modules/
 
-# Visual Studio
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docobj
+.env
 
-# Temp / backup files
-*.tmp
-*.Backup.tmp
+# macOS
+.DS_Store
 
-# Rider
-.idea/
+# Logs
+*.log
+npm-debug.log*
 
-# Claude Code
-.claude/
+dist/
+build/
+

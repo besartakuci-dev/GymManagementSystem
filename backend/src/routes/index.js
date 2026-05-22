@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes.js';
+// Future: import planRoutes from './plan.routes.js';
+// Future: import membershipRoutes from './membership.routes.js';
+// Future: import classRoutes from './class.routes.js';
+// Future: import bookingRoutes from './booking.routes.js';
+
+const router = Router();
+
+router.use('/auth', authRoutes);
+
+export default router;
