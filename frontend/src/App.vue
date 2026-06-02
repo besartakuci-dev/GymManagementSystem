@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
 import { computed, onMounted, reactive, ref } from 'vue'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
@@ -1011,3 +1012,20 @@ button:disabled {
   }
 }
 </style>
+=======
+import { onMounted } from 'vue'
+import { RouterView } from 'vue-router'
+import Navbar from '@/components/Navbar.vue'
+import Footer from '@/components/Footer.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+onMounted(auth.init)
+</script>
+
+<template>
+  <Navbar />
+  <RouterView />
+  <Footer />
+</template>
+>>>>>>> 575d9adc10a1a296b9129ab50b19280e0631897b
