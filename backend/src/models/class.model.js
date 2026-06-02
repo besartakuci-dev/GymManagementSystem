@@ -1,0 +1,205 @@
+import { pool } from '../config/db.js';
+
+const CLASS_SELECT = `
+  SELECT
+    c.ClassID,
+    c.ClassTypeID,
+    ct.TypeName AS ClassTypeName,
+    ct.Category,
+    c.TrainerID,
+    u.UserID AS TrainerUserID,
+    CONCAT(u.FirstName, ' ', u.LastName) AS TrainerName,
+    c.StartDateTime,
+    c.EndDateTime,
+    c.MaxCapacity,
+    c.Room,
+    c.Status,
+    COUNT(CASE WHEN b.Status = 'booked' THEN 1 END) AS BookedCount
+  FROM Classes c
+  JOIN Class_Types ct ON ct.ClassTypeID = c.ClassTypeID
+  JOIN Trainers t ON t.TrainerID = c.TrainerID
+  JOIN Users u ON u.UserID = t.UserID
+  LEFT JOIN Bookings b ON b.ClassID = c.ClassID
+`;
+
+const CLASS_GROUP_ORDER = `
+  GROUP BY
+    c.ClassID, c.ClassTypeID, ct.TypeName, ct.Category, c.TrainerID, u.UserID,
+    u.FirstName, u.LastName, c.StartDateTime, c.EndDateTime, c.MaxCapacity, c.Room, c.Status
+  ORDER BY c.StartDateTime ASC
+`;
+
+export async function findAll({ upcomingOnly = true } = {}) {
+  const where = upcomingOnly
+    ? `WHERE c.Status = 'scheduled' AND c.StartDateTime >= NOW()`
+    : '';
+  const [rows] = await pool.execute(`${CLASS_SELECT} ${where} ${CLASS_GROUP_ORDER}`);
+  return rows;
+}
+
+export async function findById(classId) {
+  const [rows] = await pool.execute(
+    `${CLASS_SELECT} WHERE c.ClassID = ? ${CLASS_GROUP_ORDER} LIMIT 1`,
+    [classId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function findByTrainer(trainerId) {
+  const [rows] = await pool.execute(
+    `${CLASS_SELECT} WHERE c.TrainerID = ? ${CLASS_GROUP_ORDER}`,
+    [trainerId]
+  );
+  return rows;
+}
+
+export async function create({ classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, status }) {
+  const [result] = await pool.execute(
+    `INSERT INTO Classes (ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Status)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, status ?? 'scheduled']
+  );
+  return result.insertId;
+}
+
+export async function update(classId, fields) {
+  const columnMap = {
+    classTypeId: 'ClassTypeID',
+    trainerId: 'TrainerID',
+    startDateTime: 'StartDateTime',
+    endDateTime: 'EndDateTime',
+    maxCapacity: 'MaxCapacity',
+    status: 'Status',
+  };
+
+  const entries = Object.entries(fields).filter(([, value]) => value !== undefined);
+  const assignments = entries.map(([key]) => `${columnMap[key]} = ?`);
+  const values = entries.map(([, value]) => value);
+
+  if (!assignments.length) return 0;
+
+  const [result] = await pool.execute(
+    `UPDATE Classes SET ${assignments.join(', ')} WHERE ClassID = ?`,
+    [...values, classId]
+  );
+  return result.affectedRows;
+}
+
+export async function updateStatus(classId, status) {
+  const [result] = await pool.execute(
+    `UPDATE Classes SET Status = ? WHERE ClassID = ?`,
+    [status, classId]
+  );
+  return result.affectedRows;
+}
+
+export async function findClassTypes() {
+  const [rows] = await pool.execute(
+    `SELECT ClassTypeID, TypeName, Category, Description, IsActive
+     FROM Class_Types
+     WHERE IsActive = TRUE
+     ORDER BY TypeName ASC`
+  );
+  return rows;
+}
+
+export async function findAllClassTypes() {
+  const [rows] = await pool.execute(
+    `SELECT ClassTypeID, TypeName, Category, Description, IsActive, CreatedAt
+     FROM Class_Types
+     ORDER BY IsActive DESC, TypeName ASC`
+  );
+  return rows;
+}
+
+export async function findClassTypeById(classTypeId) {
+  const [rows] = await pool.execute(
+    `SELECT ClassTypeID, TypeName, Category, Description, IsActive, CreatedAt
+     FROM Class_Types
+     WHERE ClassTypeID = ?
+     LIMIT 1`,
+    [classTypeId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function createClassType({ typeName, category, description }) {
+  const [result] = await pool.execute(
+    `INSERT INTO Class_Types (TypeName, Category, Description)
+     VALUES (?, ?, ?)`,
+    [typeName, category ?? null, description ?? null]
+  );
+  return result.insertId;
+}
+
+export async function updateClassType(classTypeId, fields) {
+  const columnMap = {
+    typeName: 'TypeName',
+    category: 'Category',
+    description: 'Description',
+    isActive: 'IsActive',
+  };
+
+  const entries = Object.entries(fields).filter(([, value]) => value !== undefined);
+  const assignments = entries.map(([key]) => `${columnMap[key]} = ?`);
+  const values = entries.map(([, value]) => value);
+
+  if (!assignments.length) return 0;
+
+  const [result] = await pool.execute(
+    `UPDATE Class_Types SET ${assignments.join(', ')} WHERE ClassTypeID = ?`,
+    [...values, classTypeId]
+  );
+  return result.affectedRows;
+}
+
+export async function deactivateClassType(classTypeId) {
+  const [result] = await pool.execute(
+    `UPDATE Class_Types SET IsActive = FALSE WHERE ClassTypeID = ?`,
+    [classTypeId]
+  );
+  return result.affectedRows;
+}
+
+export async function findActiveTrainers() {
+  const [rows] = await pool.execute(
+    `SELECT
+       t.TrainerID,
+       u.UserID,
+       CONCAT(u.FirstName, ' ', u.LastName) AS TrainerName,
+       t.Specialization
+     FROM Trainers t
+     JOIN Users u ON u.UserID = t.UserID
+     WHERE u.IsActive = TRUE
+     ORDER BY u.FirstName ASC, u.LastName ASC`
+  );
+  return rows;
+}
+
+export async function findTrainerByUserId(userId) {
+  const [rows] = await pool.execute(
+    `SELECT TrainerID, UserID FROM Trainers WHERE UserID = ? LIMIT 1`,
+    [userId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function classTypeExists(classTypeId) {
+  const [rows] = await pool.execute(
+    `SELECT ClassTypeID FROM Class_Types WHERE ClassTypeID = ? AND IsActive = TRUE LIMIT 1`,
+    [classTypeId]
+  );
+  return Boolean(rows[0]);
+}
+
+export async function trainerExists(trainerId) {
+  const [rows] = await pool.execute(
+    `SELECT t.TrainerID
+     FROM Trainers t
+     JOIN Users u ON u.UserID = t.UserID
+     WHERE t.TrainerID = ? AND u.IsActive = TRUE
+     LIMIT 1`,
+    [trainerId]
+  );
+  return Boolean(rows[0]);
+}

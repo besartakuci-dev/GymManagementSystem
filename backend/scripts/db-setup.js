@@ -36,6 +36,12 @@ async function setup() {
 }
 
 setup().catch((err) => {
-  console.error('Database setup failed:', err.message);
+  console.error('Database setup failed:', {
+    message: err.message,
+    code: err.code,
+    errno: err.errno,
+    sqlState: err.sqlState,
+    sqlMessage: err.sqlMessage,
+  });
   process.exit(1);
 });

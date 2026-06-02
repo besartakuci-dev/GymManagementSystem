@@ -77,19 +77,35 @@ CREATE TABLE Memberships (
 
 -- 5. CLASSES — each row is one scheduled class occurrence
 
+CREATE TABLE Class_Types (
+    ClassTypeID     INT             AUTO_INCREMENT PRIMARY KEY,
+    TypeName        VARCHAR(100)    NOT NULL UNIQUE,
+    Category        VARCHAR(60),
+    Description     TEXT,
+    IsActive        BOOLEAN         NOT NULL DEFAULT TRUE,
+    CreatedAt       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_class_types_active (IsActive),
+    INDEX idx_class_types_category (Category)
+) ENGINE=InnoDB;
+
+
 CREATE TABLE Classes (
     ClassID         INT             AUTO_INCREMENT PRIMARY KEY,
+    ClassTypeID     INT             NOT NULL,
     TrainerID       INT             NOT NULL,
-    ClassName       VARCHAR(120)    NOT NULL,
-    Category        VARCHAR(60),
     StartDateTime   DATETIME        NOT NULL,
     EndDateTime     DATETIME        NOT NULL,
     MaxCapacity     INT             NOT NULL,
     Room            VARCHAR(50),
     Status          ENUM('scheduled', 'cancelled', 'completed') NOT NULL DEFAULT 'scheduled',
+    CONSTRAINT fk_classes_type FOREIGN KEY (ClassTypeID) REFERENCES Class_Types(ClassTypeID)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_classes_trainer FOREIGN KEY (TrainerID) REFERENCES Trainers(TrainerID)
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT chk_class_time CHECK (EndDateTime > StartDateTime),
+    CONSTRAINT chk_class_capacity CHECK (MaxCapacity > 0),
+    INDEX idx_classes_type (ClassTypeID),
+    INDEX idx_classes_trainer (TrainerID),
     INDEX idx_classes_start (StartDateTime),
     INDEX idx_classes_status (Status)
 ) ENGINE=InnoDB;

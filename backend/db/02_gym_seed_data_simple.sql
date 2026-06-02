@@ -56,20 +56,31 @@ INSERT INTO Memberships (MembershipID, UserID, PlanID, StartDate, EndDate, Statu
 (11, 14, 1, '2025-05-10', '2025-06-10', 'active',  25.00,  'cash',          'pending', NULL);
 
 
+-- CLASS TYPES
+
+INSERT INTO Class_Types (ClassTypeID, TypeName, Category, Description) VALUES
+(1, 'Yoga',              'Flexibility', 'Mobility, balance, and mindful movement.'),
+(2, 'Pilates',           'Flexibility', 'Core strength, posture, and controlled movement.'),
+(3, 'Boxing',            'Cardio',      'Combat-inspired conditioning and coordination.'),
+(4, 'Strength Training', 'Strength',    'Progressive strength and hypertrophy sessions.'),
+(5, 'HIIT',              'Cardio',      'High intensity intervals for conditioning.'),
+(6, 'Zumba',             'Wellness',    'Dance fitness with upbeat cardio work.');
+
+
 -- CLASSES  (each row = one scheduled occurrence)
 
-INSERT INTO Classes (ClassID, TrainerID, ClassName, Category, StartDateTime, EndDateTime, MaxCapacity, Room, Status) VALUES
+INSERT INTO Classes (ClassID, ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Room, Status) VALUES
 -- Past classes (completed)
-(1, 2, 'Joga për fillestarë', 'Joga',   '2025-05-12 18:00:00', '2025-05-12 19:00:00', 15, 'Salla 2',  'completed'),
-(2, 3, 'HIIT i avancuar',     'Kardio', '2025-05-13 19:00:00', '2025-05-13 19:45:00', 20, 'Salla 3',  'completed'),
-(3, 1, 'Forcë & Hipertrofi',  'Forcë',  '2025-05-14 17:00:00', '2025-05-14 18:00:00', 12, 'Salla 1',  'completed'),
+(1, 1, 2, '2026-05-12 18:00:00', '2026-05-12 19:00:00', 15, 'Salla 2',  'completed'),
+(2, 5, 3, '2026-05-13 19:00:00', '2026-05-13 19:45:00', 20, 'Salla 3',  'completed'),
+(3, 4, 1, '2026-05-14 17:00:00', '2026-05-14 18:00:00', 12, 'Salla 1',  'completed'),
 -- Upcoming classes
-(4, 2, 'Joga për fillestarë', 'Joga',   '2025-05-19 18:00:00', '2025-05-19 19:00:00', 15, 'Salla 2',  'scheduled'),
-(5, 3, 'HIIT i avancuar',     'Kardio', '2025-05-20 19:00:00', '2025-05-20 19:45:00', 20, 'Salla 3',  'scheduled'),
-(6, 1, 'Forcë & Hipertrofi',  'Forcë',  '2025-05-21 17:00:00', '2025-05-21 18:00:00', 12, 'Salla 1',  'scheduled'),
-(7, 3, 'Spinning matinal',    'Kardio', '2025-05-22 07:00:00', '2025-05-22 07:50:00', 25, 'Salla 3',  'scheduled'),
-(8, 2, 'Pilates',             'Pilates','2025-05-23 17:00:00', '2025-05-23 17:45:00', 15, 'Salla 2',  'scheduled'),
-(9, 1, 'Forcë për fillestarë','Forcë',  '2025-05-24 11:00:00', '2025-05-24 12:00:00', 10, 'Salla 1',  'scheduled');
+(4, 1, 2, '2026-06-10 18:00:00', '2026-06-10 19:00:00', 15, 'Salla 2',  'scheduled'),
+(5, 5, 3, '2026-06-11 19:00:00', '2026-06-11 19:45:00', 20, 'Salla 3',  'scheduled'),
+(6, 4, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 'Salla 1',  'scheduled'),
+(7, 6, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 'Salla 3',  'scheduled'),
+(8, 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 'Salla 2',  'scheduled'),
+(9, 3, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 'Salla 1',  'scheduled');
 
 
 -- BOOKINGS
@@ -107,8 +118,9 @@ INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status) VALUES
 --     JOIN Users u ON u.UserID = m.UserID
 --     JOIN Membership_Plans p ON p.PlanID = m.PlanID
 --     WHERE m.Status = 'active';
---   SELECT c.ClassName, c.StartDateTime, COUNT(b.BookingID) AS booked
+--   SELECT ct.TypeName, c.StartDateTime, COUNT(b.BookingID) AS booked
 --     FROM Classes c
+--     JOIN Class_Types ct ON ct.ClassTypeID = c.ClassTypeID
 --     LEFT JOIN Bookings b ON b.ClassID = c.ClassID AND b.Status = 'booked'
 --     WHERE c.Status = 'scheduled'
 --     GROUP BY c.ClassID;
