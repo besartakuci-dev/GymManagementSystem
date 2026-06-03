@@ -9,6 +9,8 @@ const CLASS_SELECT = `
     c.TrainerID,
     u.UserID AS TrainerUserID,
     CONCAT(u.FirstName, ' ', u.LastName) AS TrainerName,
+    DAYNAME(c.StartDateTime) AS dayOfWeek,
+    DATE_FORMAT(c.StartDateTime, '%H:%i') AS startTime,
     c.StartDateTime,
     c.EndDateTime,
     c.MaxCapacity,
