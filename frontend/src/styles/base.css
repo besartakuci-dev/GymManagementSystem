@@ -1,0 +1,32 @@
+@import './variables.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--gym-bg);
+  color: var(--gym-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+}
+
+/* PrimeVue input text visibility */
+.p-inputtext,
+.p-password-input,
+.p-datepicker-input {
+  color: #000000 !important;
+}
+
+.p-inputtext::placeholder,
+.p-password-input::placeholder,
+.p-datepicker-input::placeholder {
+  color: #6b6b6b !important;
+}
