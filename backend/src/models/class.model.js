@@ -19,3 +19,26 @@ export async function getDashboardClasses() {
 
   return rows;
 }
+
+export async function getBookingsByClassId(classId) {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      b.BookingID,
+      b.ClassID,
+      b.UserID,
+      u.FirstName,
+      u.LastName,
+      u.Email,
+      b.BookingDate,
+      b.Status
+    FROM Bookings b
+    JOIN Users u ON b.UserID = u.UserID
+    WHERE b.ClassID = ?
+    ORDER BY b.BookingDate DESC
+    `,
+    [classId]
+  );
+
+  return rows;
+}
