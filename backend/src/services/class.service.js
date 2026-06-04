@@ -129,14 +129,14 @@ async function validateReferences({ classTypeId, trainerId }) {
   }
 }
 
-<<<<<<< HEAD
 export async function getClassesDashboard() {
   return await getDashboardClasses();
 }
 
 export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
-=======
+}
+
 function assertValidClassTimes(startDateTime, endDateTime) {
   if (new Date(endDateTime) <= new Date(startDateTime)) {
     throw new ApiError(400, 'End date/time must be after start date/time', 'INVALID_CLASS_TIME');
@@ -165,7 +165,6 @@ function resolveTrainerIdForUpdate(user, payload, existing) {
   }
 
   return undefined;
->>>>>>> dc8a9c61aec2eee78ed4343155a763680f3c29b1
 }
 
 export async function listClasses() {
@@ -210,26 +209,10 @@ export async function updateClass(user, classId, payload) {
   const existing = await requireClass(classId);
   assertCanManage(user, existing);
 
-<<<<<<< HEAD
-  const nextStart = payload.startDateTime ?? existing.StartDateTime;
-  const nextEnd = payload.endDateTime ?? existing.EndDateTime;
-
-  if (new Date(nextEnd) <= new Date(nextStart)) {
-    throw new ApiError(400, 'End date/time must be after start date/time', 'INVALID_CLASS_TIME');
-  }
-
-  const trainerId =
-    user.role === 'admin'
-      ? payload.trainerId
-      : payload.trainerId === undefined
-        ? undefined
-        : existing.TrainerID;
-=======
   const { startDateTime, endDateTime } = resolveDateTimes(payload, existing);
   const nextStart = startDateTime ?? existing.StartDateTime;
   const nextEnd = endDateTime ?? existing.EndDateTime;
   assertValidClassTimes(nextStart, nextEnd);
->>>>>>> dc8a9c61aec2eee78ed4343155a763680f3c29b1
 
   const trainerId = resolveTrainerIdForUpdate(user, payload, existing);
   await validateReferences({ classTypeId: payload.classTypeId, trainerId });

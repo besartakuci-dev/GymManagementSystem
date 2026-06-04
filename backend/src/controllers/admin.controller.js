@@ -1,8 +1,17 @@
-import { Router } from 'express';
-import { dashboardController } from '../controllers/admin.controller.js';
+import {
+  getDashboardData,
+  getClassBookingsData,
+} from '../services/admin.service.js';
 
-const router = Router();
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { sendSuccess } from '../utils/response.js';
 
-router.get('/dashboard', dashboardController);
+export const dashboardController = asyncHandler(async (req, res) => {
+  const data = await getDashboardData();
+  sendSuccess(res, data);
+});
 
-export default router;
+export const classBookingsController = asyncHandler(async (req, res) => {
+  const data = await getClassBookingsData();
+  sendSuccess(res, { classBookings: data });
+});
