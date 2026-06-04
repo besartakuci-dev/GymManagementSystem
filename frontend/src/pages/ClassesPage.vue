@@ -1,144 +1,194 @@
-<script setup lang="ts">
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import Card from 'primevue/card'
-import fitnesImg   from '@/assets/fitnes.png'
-import pilatesImg  from '@/assets/pilates.png'
-import yogaImg     from '@/assets/yoga.png'
-import crossfitImg from '@/assets/crossfit.png'
 
-const classes = [
-  {
-    image: fitnesImg,
-    title: 'Fitness',
-    level: 'All levels',
-    duration: '60 min',
-    desc: 'Full-body strength and conditioning sessions designed to build muscle, burn fat, and boost overall performance.',
-  },
-  {
-    image: pilatesImg,
-    title: 'Pilates',
-    level: 'Beginner – Intermediate',
-    duration: '50 min',
-    desc: 'Low-impact core-focused training that improves posture, flexibility, and body awareness.',
-  },
-  {
-    image: yogaImg,
-    title: 'Yoga',
-    level: 'All levels',
-    duration: '60 min',
-    desc: 'Breathwork, balance, and mindful movement to increase flexibility and reduce stress.',
-  },
-  {
-    image: crossfitImg,
-    title: 'CrossFit',
-    level: 'Intermediate – Advanced',
-    duration: '45 min',
-    desc: 'High-intensity functional movements combining weightlifting, cardio, and gymnastics.',
-  },
-]
+const classes = ref([])
+const loading = ref(true)
+const error = ref('')
+
+const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+const groupedClasses = computed(() => {
+  const groups = new Map()
+
+  for (const gymClass of classes.value) {
+    const name = gymClass.ClassTypeName
+    if (!groups.has(name)) groups.set(name, [])
+    groups.get(name).push(gymClass)
+  }
+
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, sessions]) => ({
+      name,
+      sessions: [...sessions].sort((a, b) => {
+        const dayDiff = DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek)
+        if (dayDiff !== 0) return dayDiff
+        return a.startTime.localeCompare(b.startTime)
+      }),
+    }))
+})
+
+const fetchClasses = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    const res = await axios.get('http://localhost:3000/api/classes')
+    classes.value = res.data.data.classes ?? []
+  } catch (err) {
+    console.error('Failed to load classes', err)
+    error.value = 'Could not load classes. Please try again later.'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchClasses)
 </script>
 
 <template>
-  <main class="classes-page">
+  <main class="page">
+    <section class="classes">
+      <div class="section-header">
+        <h1>Our Classes</h1>
+        <p>Weekly schedule grouped by class type.</p>
+      </div>
 
-    <div class="header">
-      <h1>Our Classes</h1>
-      <p>Find the right class for your goals and fitness level.</p>
-    </div>
+      <p v-if="loading" class="status">Loading classes...</p>
+      <p v-else-if="error" class="status error">{{ error }}</p>
+      <p v-else-if="!groupedClasses.length" class="status">No upcoming classes scheduled.</p>
 
-    <div class="grid">
-      <Card v-for="c in classes" :key="c.title" class="class-card">
-        <template #header>
-          <img :src="c.image" :alt="c.title" class="class-img" />
-        </template>
-        <template #content>
-          <div class="card-body">
-            <h3>{{ c.title }}</h3>
-            <div class="meta">
-              <span><i class="pi pi-bolt" /> {{ c.level }}</span>
-              <span><i class="pi pi-clock" /> {{ c.duration }}</span>
-            </div>
-            <p>{{ c.desc }}</p>
-          </div>
-        </template>
-      </Card>
-    </div>
-
+      <div v-else class="groups">
+        <Card v-for="group in groupedClasses" :key="group.name" class="group-card">
+          <template #title>
+            <h2>{{ group.name }}</h2>
+          </template>
+          <template #content>
+            <ul class="session-list">
+              <li v-for="session in group.sessions" :key="session.ClassID" class="session">
+                <span class="session-day">{{ session.dayOfWeek }}</span>
+                <span class="session-separator">-</span>
+                <span class="session-time">{{ session.startTime }}</span>
+                <span class="session-separator">-</span>
+                <span class="session-trainer">{{ session.TrainerName }}</span>
+              </li>
+            </ul>
+          </template>
+        </Card>
+      </div>
+    </section>
   </main>
 </template>
 
 <style scoped>
-.classes-page {
-  min-height: calc(100vh - 64px);
+.page {
   background: var(--gym-bg);
-  padding: 4rem 2rem;
+  min-height: calc(100vh - 64px);
 }
 
-.header {
+.classes {
+  padding: 4rem 2rem 5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.section-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
 }
 
-.header h1 {
-  font-size: 2.5rem;
+.section-header h1 {
+  font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 800;
   color: var(--gym-text);
   margin-bottom: 0.5rem;
 }
 
-.header p {
+.section-header p {
   color: var(--gym-text-muted);
   font-size: 1rem;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  max-width: 1100px;
-  margin: 0 auto;
+.status {
+  text-align: center;
+  color: var(--gym-text-muted);
 }
 
-.class-card {
+.status.error {
+  color: var(--gym-orange);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.group-card {
   background: var(--gym-surface) !important;
   border: 1px solid var(--gym-border) !important;
-  overflow: hidden;
 }
 
-.class-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  display: block;
-}
-
-.card-body {
-  padding: 0.25rem 0;
-}
-
-.card-body h3 {
-  font-size: 1.2rem;
+.group-card h2 {
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--gym-text);
-  margin-bottom: 0.5rem;
-}
-
-.meta {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-.meta span {
-  font-size: 0.8rem;
   color: var(--gym-orange);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+  margin: 0;
 }
 
-.card-body p {
-  font-size: 0.88rem;
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--gym-surface-raised);
+  border: 1px solid var(--gym-border);
+  border-radius: 6px;
+  color: var(--gym-text);
+  font-size: 0.95rem;
+}
+
+.session-day {
+  font-weight: 600;
+}
+
+.session-time {
+  color: var(--gym-orange);
+}
+
+.session-trainer {
   color: var(--gym-text-muted);
-  line-height: 1.6;
+}
+
+.session-separator {
+  color: var(--gym-text-muted);
+}
+
+@media (max-width: 600px) {
+  .classes {
+    padding: 3rem 1.25rem 4rem;
+  }
+
+  .session {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .session-separator {
+    display: none;
+  }
 }
 </style>

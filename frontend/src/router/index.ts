@@ -4,6 +4,7 @@ import AuthPage from '@/pages/AuthPage.vue'
 import ClassesPage from '@/pages/ClassesPage.vue'
 import AboutPage from '@/pages/AboutPage.vue'
 import TrainerDashboardPage from '@/pages/TrainerDashboardPage.vue'
+import AdminDashboardPage from '@/pages/AdminDashboardPage.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -14,6 +15,7 @@ const router = createRouter({
     { path: '/classes', component: ClassesPage },
     { path: '/about',   component: AboutPage },
     {path: '/trainer-dashboard',component: TrainerDashboardPage},
+    { path: '/admin-dashboard', component: AdminDashboardPage },
   ],
 })
 
