@@ -20,11 +20,26 @@ function handleLogout() {
       <RouterLink to="/home">Home</RouterLink>
       <RouterLink to="/classes">Classes</RouterLink>
       <RouterLink to="/about">About Us</RouterLink>
+
+      <!-- Member -->
+      <template v-if="auth.user?.Role === 'member'">
+        <RouterLink to="/bookings">My Bookings</RouterLink>
+      </template>
+
+      <!-- Trainer -->
+      <template v-if="auth.user?.Role === 'trainer'">
+        <RouterLink to="/trainer/classes">My Classes</RouterLink>
+      </template>
+
+      <!-- Admin -->
+      <template v-if="auth.user?.Role === 'admin'">
+        <RouterLink to="/admin">Admin</RouterLink>
+      </template>
     </div>
 
     <div class="actions">
       <template v-if="auth.user">
-        <span class="username">{{ auth.user.FirstName }}</span>
+        <RouterLink to="/profile" class="username">{{ auth.user.FirstName }}</RouterLink>
         <Button label="Logout" severity="secondary" size="small" @click="handleLogout" />
       </template>
       <template v-else>
@@ -84,5 +99,11 @@ function handleLogout() {
 .username {
   font-size: 0.9rem;
   color: var(--gym-text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.username:hover {
+  color: var(--gym-orange);
 }
 </style>
