@@ -1,36 +1,47 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '@/api/axios'
+import {
+  bookClass,
+  cancelClass as cancelClassApi,
+  createClass,
+  deleteClass,
+  getClasses,
+  updateClass,
+  type ClassPayload,
+} from '@/api/classes'
 import { useAuthStore } from '@/stores/auth'
 
 type Role = 'admin' | 'trainer' | 'member'
-type ClassStatus = 'scheduled' | 'cancelled' | 'completed'
+type Category = 'Yoga' | 'Pilates'
+type RawStatus = 'scheduled' | 'cancelled' | 'completed'
+type DisplayStatus = 'Active' | 'Cancelled' | 'Completed'
 
 interface GymClass {
   ClassID: number
-  ClassTypeID: number
-  ClassTypeName: string
-  Category: string
+  id: number
+  Name?: string
+  name: string
+  Category?: string
+  category: Category
   TrainerID: number
   TrainerUserID: number
   TrainerName: string
-  dayOfWeek: string
+  trainerName: string
+  date: string
   startTime: string
-  StartDateTime: string
-  EndDateTime: string
+  endTime: string
+  Room?: string
+  room: string
   MaxCapacity: number
-  Price: number | string
-  Status: ClassStatus
+  maxCapacity: number
   BookedCount: number
+  bookedCount: number
+  SpotsLeft: number
+  spotsLeft: number
+  Status: RawStatus
+  status: DisplayStatus
   IsBookedByCurrentUser?: boolean
-}
-
-interface ClassType {
-  ClassTypeID: number
-  TypeName: string
-  Category: string
-  Price?: number | string
 }
 
 interface Trainer {
@@ -43,23 +54,26 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const classes = ref<GymClass[]>([])
-const classTypes = ref<ClassType[]>([])
 const trainers = ref<Trainer[]>([])
 const loading = ref(false)
 const saving = ref(false)
+const bookingId = ref<number | null>(null)
 const error = ref('')
 const notice = ref('')
 const editingId = ref<number | null>(null)
-const paymentMethod = reactive<Record<number, string>>({})
+const cancelTarget = ref<GymClass | null>(null)
+const deleteMode = ref(false)
+const formErrors = reactive<Record<string, string>>({})
 
 const form = reactive({
-  classTypeId: '',
-  trainerId: '',
-  startDateTime: '',
-  endDateTime: '',
+  name: '',
+  category: 'Yoga' as Category,
+  date: '',
+  startTime: '',
+  endTime: '',
+  room: '',
   maxCapacity: 20,
-  price: 0,
-  status: 'scheduled' as ClassStatus,
+  trainerId: '',
 })
 
 const role = computed<Role | 'public'>(() => auth.user?.Role || 'public')
@@ -71,77 +85,88 @@ const isEditing = computed(() => editingId.value !== null)
 
 const stats = computed(() => ({
   total: classes.value.length,
-  scheduled: classes.value.filter((c) => c.Status === 'scheduled').length,
+  active: classes.value.filter((c) => c.Status === 'scheduled').length,
   cancelled: classes.value.filter((c) => c.Status === 'cancelled').length,
-  completed: classes.value.filter((c) => c.Status === 'completed').length,
+  full: classes.value.filter((c) => Number(c.spotsLeft) <= 0).length,
 }))
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('en', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
-
-function toDateTimeLocal(value: string) {
-  const date = new Date(value)
-  const offset = date.getTimezoneOffset() * 60000
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
-}
-
-function formatMoney(value: number | string) {
-  return new Intl.NumberFormat('en', { style: 'currency', currency: 'EUR' }).format(Number(value))
-}
-
-async function loadClasses() {
-  loading.value = true
-  error.value = ''
-  try {
-    const { data } = await api.get('/classes')
-    classes.value = data.data.classes ?? []
-    classTypes.value = data.data.classTypes ?? []
-    trainers.value = data.data.trainers ?? []
-    if (!form.classTypeId && classTypes.value[0]) {
-      form.classTypeId = String(classTypes.value[0].ClassTypeID)
-      form.price = Number(classTypes.value[0].Price || 0)
-    }
-    if (!form.trainerId && trainers.value[0]) {
-      form.trainerId = String(trainers.value[0].TrainerID)
-    }
-  } catch (e: any) {
-    if (e.response?.status === 401) {
-      router.push('/login')
-      return
-    }
-    error.value = e.response?.data?.message || 'Could not load classes'
-  } finally {
-    loading.value = false
+function setServerErrors(details: Record<string, string[]> | undefined) {
+  for (const key of Object.keys(formErrors)) delete formErrors[key]
+  if (!details) return
+  for (const [key, messages] of Object.entries(details)) {
+    if (messages?.[0]) formErrors[key] = messages[0]
   }
+}
+
+function validateForm() {
+  for (const key of Object.keys(formErrors)) delete formErrors[key]
+  const start = new Date(`${form.date}T${form.startTime}:00`)
+  const end = new Date(`${form.date}T${form.endTime}:00`)
+  const editingClass = classes.value.find((gymClass) => gymClass.id === editingId.value)
+
+  if (!form.name.trim()) formErrors.name = 'Name is required.'
+  else if (form.name.trim().length < 3) formErrors.name = 'Name must be at least 3 characters.'
+  else if (form.name.trim().length > 100) formErrors.name = 'Name cannot exceed 100 characters.'
+
+  if (!['Yoga', 'Pilates'].includes(form.category)) formErrors.category = 'Choose Yoga or Pilates.'
+  if (!form.date) formErrors.date = 'Date is required.'
+  if (!form.startTime) formErrors.startTime = 'Start time is required.'
+  if (!form.endTime) formErrors.endTime = 'End time is required.'
+  if (form.date && form.startTime && start < new Date()) formErrors.date = 'Class date and time cannot be in the past.'
+  if (form.startTime && form.endTime && end <= start) formErrors.endTime = 'End time must be after start time.'
+
+  if (!form.room.trim()) formErrors.room = 'Room is required.'
+  else if (form.room.trim().length > 50) formErrors.room = 'Room cannot exceed 50 characters.'
+
+  if (!Number.isInteger(Number(form.maxCapacity))) formErrors.maxCapacity = 'Capacity must be a whole number.'
+  else if (Number(form.maxCapacity) < 1) formErrors.maxCapacity = 'Capacity must be at least 1.'
+  else if (Number(form.maxCapacity) > 100) formErrors.maxCapacity = 'Capacity cannot exceed 100.'
+  else if (editingClass && Number(form.maxCapacity) < Number(editingClass.bookedCount)) {
+    formErrors.maxCapacity = 'Capacity cannot be lower than existing bookings.'
+  }
+
+  if (isAdmin.value && !form.trainerId) formErrors.trainerId = 'Trainer is required.'
+  return Object.keys(formErrors).length === 0
+}
+
+function buildPayload(): ClassPayload {
+  const payload: ClassPayload = {
+    name: form.name.trim(),
+    category: form.category,
+    date: form.date,
+    startTime: form.startTime,
+    endTime: form.endTime,
+    room: form.room.trim(),
+    maxCapacity: Number(form.maxCapacity),
+  }
+  if (isAdmin.value) payload.trainerId = Number(form.trainerId)
+  return payload
 }
 
 function resetForm() {
   editingId.value = null
-  form.classTypeId = classTypes.value[0] ? String(classTypes.value[0].ClassTypeID) : ''
-  form.trainerId = trainers.value[0] ? String(trainers.value[0].TrainerID) : ''
-  form.startDateTime = ''
-  form.endDateTime = ''
+  form.name = ''
+  form.category = 'Yoga'
+  form.date = ''
+  form.startTime = ''
+  form.endTime = ''
+  form.room = ''
   form.maxCapacity = 20
-  form.price = classTypes.value[0] ? Number(classTypes.value[0].Price || 0) : 0
-  form.status = 'scheduled'
+  form.trainerId = trainers.value[0] ? String(trainers.value[0].TrainerID) : ''
+  for (const key of Object.keys(formErrors)) delete formErrors[key]
 }
 
 function editClass(gymClass: GymClass) {
-  editingId.value = gymClass.ClassID
-  form.classTypeId = String(gymClass.ClassTypeID)
+  editingId.value = gymClass.id
+  form.name = gymClass.name
+  form.category = gymClass.category
+  form.date = gymClass.date
+  form.startTime = gymClass.startTime
+  form.endTime = gymClass.endTime
+  form.room = gymClass.room
+  form.maxCapacity = gymClass.maxCapacity
   form.trainerId = String(gymClass.TrainerID)
-  form.startDateTime = toDateTimeLocal(gymClass.StartDateTime)
-  form.endDateTime = toDateTimeLocal(gymClass.EndDateTime)
-  form.maxCapacity = gymClass.MaxCapacity
-  form.price = Number(gymClass.Price || 0)
-  form.status = gymClass.Status
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function canManageClass(gymClass: GymClass) {
@@ -149,78 +174,113 @@ function canManageClass(gymClass: GymClass) {
   return isTrainer.value && gymClass.TrainerUserID === auth.user?.UserID
 }
 
-function isFull(gymClass: GymClass) {
-  return Number(gymClass.BookedCount) >= Number(gymClass.MaxCapacity)
+function canBook(gymClass: GymClass) {
+  return gymClass.Status === 'scheduled' && Number(gymClass.spotsLeft) > 0 && !gymClass.IsBookedByCurrentUser
 }
 
-function memberActionLabel(gymClass: GymClass) {
+function actionLabel(gymClass: GymClass) {
   if (gymClass.IsBookedByCurrentUser) return 'Booked'
   if (gymClass.Status === 'cancelled') return 'Cancelled'
   if (gymClass.Status === 'completed') return 'Completed'
-  if (isFull(gymClass)) return 'Full'
-  return isMember.value ? 'Pay & Enroll' : 'Login to Enroll'
+  if (Number(gymClass.spotsLeft) <= 0) return 'Full'
+  return 'Book'
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('en', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(`${value}T00:00:00`))
+}
+
+async function loadClasses() {
+  loading.value = true
+  error.value = ''
+  try {
+    const { data } = await getClasses()
+    classes.value = data.data.classes ?? []
+    trainers.value = data.data.trainers ?? []
+    if (!form.trainerId && trainers.value[0]) form.trainerId = String(trainers.value[0].TrainerID)
+  } catch (e: any) {
+    if (e.response?.status === 401) {
+      router.push('/login')
+      return
+    }
+    error.value = e.response?.data?.message || 'Could not load classes.'
+  } finally {
+    loading.value = false
+  }
 }
 
 async function saveClass() {
-  saving.value = true
   error.value = ''
   notice.value = ''
-  try {
-    const payload: Record<string, string | number> = {
-      classTypeId: Number(form.classTypeId),
-      startDateTime: form.startDateTime,
-      endDateTime: form.endDateTime,
-      maxCapacity: Number(form.maxCapacity),
-      price: Number(form.price),
-      status: form.status,
-    }
-    if (isAdmin.value) payload.trainerId = Number(form.trainerId)
+  setServerErrors(undefined)
+  if (!validateForm()) return
 
-    if (isEditing.value) {
-      await api.put(`/classes/${editingId.value}`, payload)
+  saving.value = true
+  try {
+    if (isEditing.value && editingId.value !== null) {
+      await updateClass(editingId.value, buildPayload())
       notice.value = 'Class updated.'
     } else {
-      await api.post('/classes', payload)
+      await createClass(buildPayload())
       notice.value = 'Class created.'
     }
     resetForm()
     await loadClasses()
   } catch (e: any) {
-    error.value = e.response?.data?.message || 'Could not save class'
+    setServerErrors(e.response?.data?.details)
+    error.value = e.response?.data?.message || 'Could not save class.'
   } finally {
     saving.value = false
   }
 }
 
-async function cancelClass(gymClass: GymClass) {
-  if (gymClass.Status === 'cancelled') return
-  if (!confirm(`Cancel ${gymClass.ClassTypeName} with ${gymClass.TrainerName}?`)) return
+function openCancelModal(gymClass: GymClass, asDelete = false) {
+  cancelTarget.value = gymClass
+  deleteMode.value = asDelete
+}
+
+function closeCancelModal() {
+  cancelTarget.value = null
+  deleteMode.value = false
+}
+
+async function confirmCancel() {
+  if (!cancelTarget.value) return
   error.value = ''
   notice.value = ''
   try {
-    await api.delete(`/classes/${gymClass.ClassID}`)
-    notice.value = 'Class cancelled.'
+    if (deleteMode.value) await deleteClass(cancelTarget.value.id)
+    else await cancelClassApi(cancelTarget.value.id)
+    notice.value = deleteMode.value ? 'Class cancelled by delete action.' : 'Class cancelled.'
+    closeCancelModal()
     await loadClasses()
   } catch (e: any) {
-    error.value = e.response?.data?.message || 'Could not cancel class'
+    error.value = e.response?.data?.message || 'Could not cancel class.'
   }
 }
 
-async function enroll(gymClass: GymClass) {
+async function book(gymClass: GymClass) {
   if (!isMember.value) {
     router.push('/login')
     return
   }
+  if (!canBook(gymClass)) return
+
+  bookingId.value = gymClass.id
   error.value = ''
   notice.value = ''
   try {
-    await api.post(`/classes/${gymClass.ClassID}/join`, {
-      paymentMethod: paymentMethod[gymClass.ClassID] || 'card',
-    })
-    notice.value = `Payment complete. You enrolled in ${gymClass.ClassTypeName}.`
+    await bookClass(gymClass.id)
+    notice.value = `You booked ${gymClass.name}.`
     await loadClasses()
   } catch (e: any) {
-    error.value = e.response?.data?.message || 'Could not enroll in class'
+    error.value = e.response?.data?.message || 'Could not book this class.'
+  } finally {
+    bookingId.value = null
   }
 }
 
@@ -236,117 +296,104 @@ onMounted(async () => {
 
 <template>
   <main class="classes-page">
-    <section class="hero">
-      <p class="eyebrow">GROUP CLASSES</p>
-      <h1>{{ isAdmin ? 'Class Control' : isTrainer ? 'My Classes' : 'Book Your Class' }}</h1>
-      <p>
-        {{
-          isMember
-            ? 'Choose a Yoga or Pilates session, pay, and reserve your spot.'
-            : 'Manage schedule, capacity, status, and class availability.'
-        }}
-      </p>
+    <section class="page-head">
+      <div>
+        <p class="eyebrow">Classes</p>
+        <h1>{{ canManage ? 'Class Management' : 'Browse Classes' }}</h1>
+      </div>
+      <button v-if="canManage && isEditing" class="ghost" type="button" @click="resetForm">New Class</button>
     </section>
 
-    <section v-if="isAdmin" class="stats-grid">
+    <section v-if="canManage" class="stats-grid">
       <div class="stat-card">
-        <span>Total Classes</span>
+        <span>Total</span>
         <strong>{{ stats.total }}</strong>
       </div>
       <div class="stat-card">
-        <span>Scheduled</span>
-        <strong>{{ stats.scheduled }}</strong>
+        <span>Active</span>
+        <strong>{{ stats.active }}</strong>
       </div>
       <div class="stat-card">
         <span>Cancelled</span>
         <strong>{{ stats.cancelled }}</strong>
       </div>
       <div class="stat-card">
-        <span>Completed</span>
-        <strong>{{ stats.completed }}</strong>
+        <span>Full</span>
+        <strong>{{ stats.full }}</strong>
       </div>
     </section>
 
     <section v-if="canManage" class="manager-grid">
       <form class="panel" @submit.prevent="saveClass">
         <div class="panel-head">
-          <p class="eyebrow">{{ isEditing ? 'EDIT' : 'CREATE' }}</p>
-          <h2>{{ isEditing ? 'Update Class' : 'Add Class' }}</h2>
+          <p class="eyebrow">{{ isEditing ? 'Edit' : 'Create' }}</p>
+          <h2>{{ isEditing ? 'Edit Class' : 'Create Class' }}</h2>
         </div>
 
         <label>
-          Class Type
-          <select v-model="form.classTypeId" required>
-            <option v-for="type in classTypes" :key="type.ClassTypeID" :value="type.ClassTypeID">
-              {{ type.TypeName }}
-            </option>
-          </select>
-        </label>
-
-        <label v-if="isAdmin">
-          Trainer
-          <select v-model="form.trainerId" required>
-            <option v-for="trainer in trainers" :key="trainer.TrainerID" :value="trainer.TrainerID">
-              {{ trainer.TrainerName }}
-            </option>
-          </select>
+          Name
+          <input v-model="form.name" maxlength="100" placeholder="Morning Yoga" />
+          <span v-if="formErrors.name" class="field-error">{{ formErrors.name }}</span>
         </label>
 
         <div class="split">
           <label>
-            Start
-            <input v-model="form.startDateTime" type="datetime-local" required />
+            Category
+            <select v-model="form.category">
+              <option value="Yoga">Yoga</option>
+              <option value="Pilates">Pilates</option>
+            </select>
+            <span v-if="formErrors.category" class="field-error">{{ formErrors.category }}</span>
           </label>
-          <label>
-            End
-            <input v-model="form.endDateTime" type="datetime-local" required />
+
+          <label v-if="isAdmin">
+            Trainer
+            <select v-model="form.trainerId">
+              <option value="" disabled>Select trainer</option>
+              <option v-for="trainer in trainers" :key="trainer.TrainerID" :value="trainer.TrainerID">
+                {{ trainer.TrainerName }}
+              </option>
+            </select>
+            <span v-if="formErrors.trainerId" class="field-error">{{ formErrors.trainerId }}</span>
           </label>
         </div>
 
         <div class="split">
           <label>
-            Capacity
-            <input v-model.number="form.maxCapacity" min="1" type="number" required />
+            Date
+            <input v-model="form.date" type="date" />
+            <span v-if="formErrors.date" class="field-error">{{ formErrors.date }}</span>
           </label>
           <label>
-            Price
-            <input v-model.number="form.price" min="0" step="0.01" type="number" required />
+            Room
+            <input v-model="form.room" maxlength="50" placeholder="Studio 1" />
+            <span v-if="formErrors.room" class="field-error">{{ formErrors.room }}</span>
           </label>
         </div>
 
-        <label>
-          Status
-          <select v-model="form.status">
-            <option value="scheduled">Scheduled</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
-          </select>
-        </label>
+        <div class="split">
+          <label>
+            Start Time
+            <input v-model="form.startTime" type="time" />
+            <span v-if="formErrors.startTime" class="field-error">{{ formErrors.startTime }}</span>
+          </label>
+          <label>
+            End Time
+            <input v-model="form.endTime" type="time" />
+            <span v-if="formErrors.endTime" class="field-error">{{ formErrors.endTime }}</span>
+          </label>
+          <label>
+            Max Capacity
+            <input v-model.number="form.maxCapacity" min="1" max="100" type="number" />
+            <span v-if="formErrors.maxCapacity" class="field-error">{{ formErrors.maxCapacity }}</span>
+          </label>
+        </div>
 
         <div class="actions">
-          <button class="primary" :disabled="saving">{{ saving ? 'Saving...' : isEditing ? 'Update' : 'Create' }}</button>
+          <button class="primary" :disabled="saving">{{ saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Class' }}</button>
           <button v-if="isEditing" class="ghost" type="button" @click="resetForm">Cancel Edit</button>
         </div>
       </form>
-
-      <div v-if="isAdmin" class="panel table-panel">
-        <div class="panel-head">
-          <p class="eyebrow">ADMIN</p>
-          <h2>Class Status</h2>
-        </div>
-        <div v-for="gymClass in classes" :key="gymClass.ClassID" class="admin-row">
-          <div>
-            <strong>{{ gymClass.ClassTypeName }}</strong>
-            <span>{{ gymClass.TrainerName }} &middot; {{ formatDate(gymClass.StartDateTime) }}</span>
-          </div>
-          <span class="pill">{{ gymClass.Status }}</span>
-          <span>{{ gymClass.BookedCount }}/{{ gymClass.MaxCapacity }}</span>
-          <button class="ghost" @click="editClass(gymClass)">Edit</button>
-          <button class="danger" :disabled="gymClass.Status === 'cancelled'" @click="cancelClass(gymClass)">
-            Cancel
-          </button>
-        </div>
-      </div>
     </section>
 
     <section class="alerts">
@@ -354,47 +401,70 @@ onMounted(async () => {
       <div v-if="notice" class="alert success">{{ notice }}</div>
     </section>
 
-    <section class="class-grid">
-      <article v-for="gymClass in classes" :key="gymClass.ClassID" class="class-card">
+    <section class="class-list">
+      <article v-for="gymClass in classes" :key="gymClass.id" class="class-card">
         <div class="card-top">
-          <span class="pill">{{ gymClass.Category }}</span>
-          <span class="pill">{{ gymClass.Status }}</span>
+          <span class="pill">{{ gymClass.category }}</span>
+          <span v-if="canManage" class="pill">{{ gymClass.status }}</span>
         </div>
-        <h3>{{ gymClass.ClassTypeName }}</h3>
-        <p>{{ gymClass.TrainerName }}</p>
-        <strong class="price">{{ formatMoney(gymClass.Price) }}</strong>
-        <div class="info">
-          <span>{{ gymClass.dayOfWeek }} at {{ gymClass.startTime }}</span>
-          <span>{{ formatDate(gymClass.StartDateTime) }}</span>
-          <span>{{ gymClass.BookedCount }} / {{ gymClass.MaxCapacity }} booked</span>
-        </div>
+
+        <h3>{{ gymClass.name }}</h3>
+        <p>{{ gymClass.trainerName }}</p>
+
+        <dl>
+          <div>
+            <dt>Date</dt>
+            <dd>{{ formatDate(gymClass.date) }}</dd>
+          </div>
+          <div>
+            <dt>Time</dt>
+            <dd>{{ gymClass.startTime }} - {{ gymClass.endTime }}</dd>
+          </div>
+          <div>
+            <dt>Room</dt>
+            <dd>{{ gymClass.room }}</dd>
+          </div>
+          <div>
+            <dt>Capacity</dt>
+            <dd>{{ gymClass.bookedCount }} / {{ gymClass.maxCapacity }}</dd>
+          </div>
+          <div>
+            <dt>Spots Left</dt>
+            <dd>{{ gymClass.spotsLeft }}</dd>
+          </div>
+        </dl>
 
         <div v-if="canManageClass(gymClass)" class="actions">
           <button class="ghost" @click="editClass(gymClass)">Edit</button>
-          <button class="danger" :disabled="gymClass.Status === 'cancelled'" @click="cancelClass(gymClass)">
+          <button class="danger" :disabled="gymClass.Status === 'cancelled'" @click="openCancelModal(gymClass)">
             Cancel
+          </button>
+          <button class="danger ghost-danger" :disabled="gymClass.Status === 'cancelled'" @click="openCancelModal(gymClass, true)">
+            Delete
           </button>
         </div>
 
-        <div v-else class="actions enroll-actions">
-          <select v-if="isMember" v-model="paymentMethod[gymClass.ClassID]">
-            <option value="card">Card</option>
-            <option value="cash">Cash</option>
-            <option value="bank_transfer">Bank Transfer</option>
-          </select>
-          <button
-            class="primary"
-            :disabled="gymClass.Status !== 'scheduled' || isFull(gymClass) || gymClass.IsBookedByCurrentUser"
-            @click="enroll(gymClass)"
-          >
-            {{ memberActionLabel(gymClass) }}
+        <div v-else-if="isMember" class="actions">
+          <button class="primary" :disabled="!canBook(gymClass) || bookingId === gymClass.id" @click="book(gymClass)">
+            {{ bookingId === gymClass.id ? 'Booking...' : actionLabel(gymClass) }}
           </button>
         </div>
       </article>
     </section>
 
     <p v-if="loading" class="empty">Loading classes...</p>
-    <p v-else-if="classes.length === 0" class="empty">No upcoming classes.</p>
+    <p v-else-if="classes.length === 0" class="empty">No classes found.</p>
+
+    <div v-if="cancelTarget" class="modal-backdrop" role="presentation">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+        <h2 id="cancel-title">{{ deleteMode ? 'Delete Class' : 'Cancel Class' }}</h2>
+        <p>Are you sure you want to cancel this class? This action will make the class unavailable for members.</p>
+        <div class="actions modal-actions">
+          <button class="ghost" type="button" @click="closeCancelModal">No, keep it</button>
+          <button class="danger" type="button" @click="confirmCancel">Yes, cancel class</button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -403,21 +473,25 @@ onMounted(async () => {
   background: var(--gym-bg);
   color: var(--gym-text);
   min-height: calc(100vh - 64px);
-  padding: 4rem 2rem;
+  padding: 3rem 2rem 4rem;
 }
 
-.hero,
+.page-head,
 .stats-grid,
 .manager-grid,
 .alerts,
-.class-grid {
+.class-list {
   max-width: 1180px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.hero {
-  margin-bottom: 2rem;
+.page-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .eyebrow {
@@ -425,49 +499,49 @@ onMounted(async () => {
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.18em;
+  margin: 0 0 0.35rem;
   text-transform: uppercase;
 }
 
-.hero h1,
-.panel h2,
-.class-card h3 {
+h1,
+h2,
+h3 {
   margin: 0;
   text-transform: uppercase;
 }
 
-.hero h1 {
-  font-size: clamp(2.4rem, 6vw, 5rem);
-}
-
-.hero p {
-  color: var(--gym-text-muted);
-  max-width: 680px;
+h1 {
+  font-size: clamp(2.2rem, 5vw, 4rem);
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .stat-card,
 .panel,
-.class-card {
+.class-card,
+.modal {
   background: var(--gym-surface);
   border: 1px solid var(--gym-border);
   border-radius: 8px;
 }
 
-.stat-card {
+.stat-card,
+.panel,
+.class-card,
+.modal {
   padding: 1.25rem;
 }
 
 .stat-card span,
-.class-card p,
-.info,
 label,
-.admin-row span {
+p,
+dt,
+dd {
   color: var(--gym-text-muted);
 }
 
@@ -479,15 +553,7 @@ label,
 }
 
 .manager-grid {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
-}
-
-.panel,
-.class-card {
-  padding: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .panel-head {
@@ -512,6 +578,13 @@ select {
   background: #090909;
   color: var(--gym-text);
   padding: 0 0.75rem;
+}
+
+.field-error {
+  color: #ff8b8b;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: none;
 }
 
 .split,
@@ -556,22 +629,8 @@ button:disabled {
   color: #ff6969;
 }
 
-.admin-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.85rem 0;
-  border-top: 1px solid var(--gym-border);
-}
-
-.admin-row:first-of-type {
-  border-top: 0;
-}
-
-.admin-row strong,
-.admin-row span {
-  display: block;
+.ghost-danger {
+  background: transparent;
 }
 
 .alerts {
@@ -594,17 +653,17 @@ button:disabled {
   color: #8ff0b4;
 }
 
-.class-grid {
+.class-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .card-top {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
 .pill {
@@ -617,42 +676,73 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.price {
-  display: block;
-  color: var(--gym-orange);
-  font-size: 1.5rem;
-  margin: 0.75rem 0;
-}
-
-.info {
+dl {
   display: grid;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin: 1rem 0;
 }
 
-.enroll-actions {
-  align-items: center;
+dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+dt,
+dd {
+  margin: 0;
+}
+
+dd {
+  color: var(--gym-text);
+  text-align: right;
 }
 
 .empty {
-  text-align: center;
   color: var(--gym-text-muted);
   margin-top: 2rem;
+  text-align: center;
 }
 
-@media (max-width: 880px) {
-  .stats-grid,
-  .manager-grid {
-    grid-template-columns: 1fr;
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 1rem;
+}
+
+.modal {
+  max-width: 440px;
+  width: 100%;
+}
+
+.modal-actions {
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 760px) {
+  .classes-page {
+    padding: 2rem 1rem 3rem;
   }
 
-  .admin-row {
-    grid-template-columns: 1fr;
-  }
-
+  .page-head,
   .split,
-  .actions {
+  .actions,
+  dl div {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  dd {
+    text-align: left;
   }
 }
 </style>

@@ -5,22 +5,22 @@ USE gym_db;
 
 INSERT INTO Users (UserID, Email, PasswordHash, Role, FirstName, LastName, Phone, DateOfBirth, JoinDate, IsActive) VALUES
 -- Admin
-(1,  'admin@bbrosgym.com',         '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
+(1,  'admin@bbrosgym.com',         '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
 -- Trainers
-(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
-(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
-(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
+(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
+(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
+(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
 -- Members
-(5,  'egzon.krasniqi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
-(6,  'blerta.hoxha@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
-(7,  'drilon.berisha@hotmail.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
-(8,  'fatlinda.gashi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
-(9,  'gentian.shala@yahoo.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
-(10, 'hana.bajrami@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
-(11, 'ilir.krasniqi@gmail.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
-(12, 'jeta.sylejmani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
-(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
-(14, 'mirjeta.hasani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
+(5,  'egzon.krasniqi@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
+(6,  'blerta.hoxha@gmail.com',      '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
+(7,  'drilon.berisha@hotmail.com',  '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
+(8,  'fatlinda.gashi@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
+(9,  'gentian.shala@yahoo.com',     '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
+(10, 'hana.bajrami@gmail.com',      '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
+(11, 'ilir.krasniqi@gmail.com',     '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
+(12, 'jeta.sylejmani@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
+(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
+(14, 'mirjeta.hasani@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
 
 
 -- TRAINERS
@@ -59,24 +59,24 @@ INSERT INTO Memberships (MembershipID, UserID, PlanID, StartDate, EndDate, Statu
 -- CLASS TYPES
 
 INSERT INTO Class_Types (ClassTypeID, TypeName, Category, Description, Price) VALUES
-(1, 'Yoga',              'Flexibility', 'Mobility, balance, and mindful movement.', 8.00),
-(2, 'Pilates',           'Flexibility', 'Core strength, posture, and controlled movement.', 10.00);
+(1, 'Yoga',              'Yoga', 'Mobility, balance, and mindful movement.', 8.00),
+(2, 'Pilates',           'Pilates', 'Core strength, posture, and controlled movement.', 10.00);
 
 
 -- CLASSES  (each row = one scheduled occurrence)
 
-INSERT INTO Classes (ClassID, ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Price, Room, Status) VALUES
+INSERT INTO Classes (ClassID, Name, ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Price, Room, Status) VALUES
 -- Past classes (completed)
-(1, 1, 2, '2026-05-12 18:00:00', '2026-05-12 19:00:00', 15, 8.00, 'Salla 2',  'completed'),
-(2, 2, 3, '2026-05-13 19:00:00', '2026-05-13 19:45:00', 20, 10.00, 'Salla 3',  'completed'),
-(3, 1, 1, '2026-05-14 17:00:00', '2026-05-14 18:00:00', 12, 8.00, 'Salla 1',  'completed'),
+(1, 'Morning Yoga', 1, 2, '2026-05-12 18:00:00', '2026-05-12 19:00:00', 15, 8.00, 'Salla 2',  'completed'),
+(2, 'Pilates Core', 2, 3, '2026-05-13 19:00:00', '2026-05-13 19:45:00', 20, 10.00, 'Salla 3',  'completed'),
+(3, 'Yoga Beginner', 1, 1, '2026-05-14 17:00:00', '2026-05-14 18:00:00', 12, 8.00, 'Salla 1',  'completed'),
 -- Upcoming classes
-(4, 1, 2, '2026-06-10 18:00:00', '2026-06-10 19:00:00', 15, 8.00, 'Salla 2',  'scheduled'),
-(5, 2, 3, '2026-06-11 19:00:00', '2026-06-11 19:45:00', 20, 10.00, 'Salla 3',  'scheduled'),
-(6, 1, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 8.00, 'Salla 1',  'scheduled'),
-(7, 2, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 10.00, 'Salla 3',  'scheduled'),
-(8, 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 10.00, 'Salla 2',  'scheduled'),
-(9, 1, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 8.00, 'Salla 1',  'scheduled');
+(4, 'Morning Yoga', 1, 2, '2026-06-10 18:00:00', '2026-06-10 19:00:00', 15, 8.00, 'Salla 2',  'scheduled'),
+(5, 'Pilates Core', 2, 3, '2026-06-11 19:00:00', '2026-06-11 19:45:00', 20, 10.00, 'Salla 3',  'scheduled'),
+(6, 'Yoga Beginner', 1, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 8.00, 'Salla 1',  'scheduled'),
+(7, 'Pilates Balance', 2, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 10.00, 'Salla 3',  'scheduled'),
+(8, 'Pilates Flow', 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 10.00, 'Salla 2',  'scheduled'),
+(9, 'Yoga Mobility', 1, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 8.00, 'Salla 1',  'scheduled');
 
 
 -- BOOKINGS

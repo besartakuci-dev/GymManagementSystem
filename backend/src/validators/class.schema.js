@@ -3,120 +3,99 @@ import { z } from 'zod';
 const statusSchema = z.enum(['scheduled', 'cancelled', 'completed']);
 const paymentMethodSchema = z.enum(['cash', 'card', 'bank_transfer']);
 const idParam = z.coerce.number().int().positive('Invalid class id');
+const categorySchema = z.enum(['Yoga', 'Pilates']);
 
-const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+const timeSchema = (label) =>
+  z
+    .string()
+    .min(1, `${label} is required`)
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, `${label} must be in HH:MM format`);
 
-const dayOfWeek = z
+const dateSchema = z
   .string()
-  .min(1, 'Day of week is required')
-  .transform((value) => {
-    const normalized = value.trim().toLowerCase();
-    const match = WEEKDAYS.find((day) => day === normalized || day.startsWith(normalized.slice(0, 3)));
-    if (!match) return value.trim();
-    return match.charAt(0).toUpperCase() + match.slice(1);
-  })
-  .refine((value) => WEEKDAYS.some((day) => day === value.toLowerCase()), 'Invalid day of week');
+  .min(1, 'Date is required')
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+  .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00`)), 'Invalid date');
 
-const startTime = z
-  .string()
-  .min(1, 'Start time is required')
-  .regex(/^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Start time must be in HH:MM or HH:MM:SS format')
-  .transform((value) => value.slice(0, 5));
-
-const dateTime = z
+const legacyDateTime = z
   .string()
   .min(1, 'Date/time is required')
   .refine((value) => !Number.isNaN(Date.parse(value)), 'Invalid date/time');
 
 const baseClassBody = z.object({
-  classTypeId: z.coerce.number().int().positive('Class type is required'),
+  name: z.string().trim().min(3, 'Name must be at least 3 characters').max(100, 'Name cannot exceed 100 characters'),
+  category: categorySchema,
+  date: dateSchema,
+  startTime: timeSchema('Start time'),
+  endTime: timeSchema('End time'),
+  room: z.string().trim().min(1, 'Room is required').max(50, 'Room cannot exceed 50 characters'),
+  maxCapacity: z.coerce
+    .number()
+    .int('Capacity must be a whole number')
+    .min(1, 'Capacity must be at least 1')
+    .max(100, 'Capacity cannot exceed 100'),
   trainerId: z.coerce.number().int().positive('Trainer is required').optional(),
-  dayOfWeek: dayOfWeek.optional(),
-  startTime: startTime.optional(),
-  startDateTime: dateTime.optional(),
-  endDateTime: dateTime.optional(),
-  maxCapacity: z.coerce.number().int().positive('Capacity must be greater than 0'),
-  price: z.coerce.number().nonnegative('Price cannot be negative').optional(),
-  status: statusSchema.default('scheduled'),
 });
 
-function validateScheduleInput(data, context) {
-  const hasSchedule = Boolean(data.dayOfWeek && data.startTime);
-  const hasDateTime = Boolean(data.startDateTime && data.endDateTime);
+function combineDateTime(date, time) {
+  return new Date(`${date}T${time}:00`);
+}
 
-  if (!hasSchedule && !hasDateTime) {
+function validateClassTime(data, context) {
+  const startDateTime = combineDateTime(data.date, data.startTime);
+  const endDateTime = combineDateTime(data.date, data.endTime);
+
+  if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) return;
+
+  if (startDateTime < new Date()) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Provide dayOfWeek and startTime, or startDateTime and endDateTime',
-      path: ['dayOfWeek'],
+      message: 'Class date and start time cannot be in the past',
+      path: ['date'],
     });
   }
 
-  if (hasDateTime && new Date(data.endDateTime) <= new Date(data.startDateTime)) {
+  if (endDateTime <= startDateTime) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'End date/time must be after start date/time',
-      path: ['endDateTime'],
+      message: 'End time must be after start time',
+      path: ['endTime'],
     });
   }
 }
 
-const createClassBody = baseClassBody.superRefine(validateScheduleInput);
-
-const updateClassBody = baseClassBody
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'At least one field is required',
-  })
-  .superRefine((data, context) => {
-    const touchesSchedule = data.dayOfWeek !== undefined || data.startTime !== undefined;
-    const touchesDateTime = data.startDateTime !== undefined || data.endDateTime !== undefined;
-
-    if (touchesSchedule && !(data.dayOfWeek && data.startTime)) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Both dayOfWeek and startTime are required when updating the schedule',
-        path: ['dayOfWeek'],
-      });
-    }
-
-    if (
-      data.startDateTime &&
-      data.endDateTime &&
-      new Date(data.endDateTime) <= new Date(data.startDateTime)
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'End date/time must be after start date/time',
-        path: ['endDateTime'],
-      });
-    }
-
-    if (touchesSchedule && touchesDateTime) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Provide either dayOfWeek and startTime, or startDateTime and endDateTime',
-        path: ['dayOfWeek'],
-      });
-    }
-  });
-
 export const createClassSchema = z.object({
-  body: createClassBody,
+  body: baseClassBody.superRefine(validateClassTime),
 });
 
 export const updateClassSchema = z.object({
   params: z.object({ id: idParam }),
-  body: updateClassBody,
+  body: baseClassBody.superRefine(validateClassTime),
 });
 
 export const classIdSchema = z.object({
   params: z.object({ id: idParam }),
 });
 
+export const trainerClassSchema = z.object({
+  params: z.object({ trainerId: idParam }),
+});
+
 export const joinClassSchema = z.object({
   params: z.object({ id: idParam }),
   body: z.object({
-    paymentMethod: paymentMethodSchema,
+    paymentMethod: paymentMethodSchema.default('card'),
+  }),
+});
+
+export const legacyCreateClassSchema = z.object({
+  body: z.object({
+    classTypeId: z.coerce.number().int().positive('Class type is required'),
+    trainerId: z.coerce.number().int().positive('Trainer is required').optional(),
+    startDateTime: legacyDateTime,
+    endDateTime: legacyDateTime,
+    maxCapacity: z.coerce.number().int().min(1).max(100),
+    price: z.coerce.number().nonnegative('Price cannot be negative').optional(),
+    status: statusSchema.default('scheduled'),
   }),
 });

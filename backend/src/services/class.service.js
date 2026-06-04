@@ -11,6 +11,7 @@ import {
   findBookingByUserAndClass,
   findById,
   findByTrainer,
+  findClassTypeByName,
   findClassTypes,
   findTrainerByUserId,
   trainerExists,
@@ -20,88 +21,14 @@ import {
 
 import { ApiError } from '../utils/ApiError.js';
 
-const DAY_INDEX = {
-  sunday: 0,
-  monday: 1,
-  tuesday: 2,
-  wednesday: 3,
-  thursday: 4,
-  friday: 5,
-  saturday: 6,
-};
-
-function formatDateTime(value) {
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
-    return value.replace('T', ' ').slice(0, 19).padEnd(19, ':00');
-  }
-
-  return new Date(value).toISOString().slice(0, 19).replace('T', ' ');
+function buildDateTime(date, time) {
+  return `${date} ${time}:00`;
 }
 
-function parseDateTime(value) {
-  return new Date(String(value).replace(' ', 'T'));
-}
-
-function deriveDayOfWeek(dateTime) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[parseDateTime(dateTime).getDay()];
-}
-
-function deriveStartTime(dateTime) {
-  const date = parseDateTime(dateTime);
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-function scheduleToStartDateTime(dayOfWeek, startTimeValue) {
-  const targetDay = DAY_INDEX[dayOfWeek.toLowerCase()];
-  const [hours, minutes] = startTimeValue.split(':').map(Number);
-  const now = new Date();
-  const result = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
-
-  let daysUntil = (targetDay - now.getDay() + 7) % 7;
-  if (daysUntil === 0 && result <= now) daysUntil = 7;
-  result.setDate(result.getDate() + daysUntil);
-
-  return formatDateTime(result.toISOString());
-}
-
-function preserveDuration(existingStart, existingEnd, nextStart) {
-  const durationMs = parseDateTime(existingEnd).getTime() - parseDateTime(existingStart).getTime();
-  const nextEnd = new Date(parseDateTime(nextStart).getTime() + durationMs);
-  return formatDateTime(nextEnd.toISOString());
-}
-
-function defaultEndDateTime(startDateTime, existing = null) {
-  if (existing) {
-    return preserveDuration(existing.StartDateTime, existing.EndDateTime, startDateTime);
-  }
-
-  const end = parseDateTime(startDateTime);
-  end.setHours(end.getHours() + 1);
-  return formatDateTime(end.toISOString());
-}
-
-function resolveDateTimes(payload, existing = null) {
-  const hasSchedule = payload.dayOfWeek !== undefined || payload.startTime !== undefined;
-
-  if (hasSchedule) {
-    if (!existing && !(payload.dayOfWeek && payload.startTime)) {
-      throw new ApiError(400, 'Both dayOfWeek and startTime are required', 'INVALID_SCHEDULE');
-    }
-
-    const dayOfWeek = payload.dayOfWeek ?? deriveDayOfWeek(existing.StartDateTime);
-    const startTimeValue = payload.startTime ?? deriveStartTime(existing.StartDateTime);
-    const startDateTime = scheduleToStartDateTime(dayOfWeek, startTimeValue);
-    const endDateTime = defaultEndDateTime(startDateTime, existing);
-
-    return { startDateTime, endDateTime };
-  }
-
+function resolveDateTimes(payload) {
   return {
-    startDateTime: payload.startDateTime ? formatDateTime(payload.startDateTime) : undefined,
-    endDateTime: payload.endDateTime ? formatDateTime(payload.endDateTime) : undefined,
+    startDateTime: buildDateTime(payload.date, payload.startTime),
+    endDateTime: buildDateTime(payload.date, payload.endTime),
   };
 }
 
@@ -123,12 +50,23 @@ function assertCanManage(user, classRow) {
   throw new ApiError(403, 'You can only manage your own classes', 'FORBIDDEN');
 }
 
-async function validateReferences({ classTypeId, trainerId }) {
-  if (classTypeId !== undefined && !(await classTypeExists(classTypeId))) {
+async function resolveClassType(category) {
+  const classType = await findClassTypeByName(category);
+  if (!classType) {
     throw new ApiError(400, 'Class type does not exist', 'CLASS_TYPE_NOT_FOUND');
   }
 
-  if (trainerId !== undefined && !(await trainerExists(trainerId))) {
+  return classType;
+}
+
+async function validateClassTypeId(classTypeId) {
+  if (!(await classTypeExists(classTypeId))) {
+    throw new ApiError(400, 'Class type does not exist', 'CLASS_TYPE_NOT_FOUND');
+  }
+}
+
+async function assertTrainerExists(trainerId) {
+  if (!(await trainerExists(trainerId))) {
     throw new ApiError(400, 'Trainer does not exist', 'TRAINER_NOT_FOUND');
   }
 }
@@ -144,6 +82,17 @@ export async function getClassBookings(classId) {
 function assertValidClassTimes(startDateTime, endDateTime) {
   if (new Date(endDateTime) <= new Date(startDateTime)) {
     throw new ApiError(400, 'End date/time must be after start date/time', 'INVALID_CLASS_TIME');
+  }
+}
+
+function assertCanChangeCapacity(payload, existing) {
+  if (payload.maxCapacity === undefined) return;
+  if (Number(payload.maxCapacity) < Number(existing.BookedCount)) {
+    throw new ApiError(
+      400,
+      'Capacity cannot be lower than the number of existing bookings',
+      'CAPACITY_BELOW_BOOKINGS'
+    );
   }
 }
 
@@ -173,8 +122,13 @@ function resolveTrainerIdForUpdate(user, payload, existing) {
 
 export async function listClasses(user) {
   const isMember = user?.role === 'member';
+  const isTrainer = user?.role === 'trainer';
+  const trainer = isTrainer ? await requireTrainerProfile(user.userId) : null;
+  const classesPromise = isTrainer
+    ? findByTrainer(trainer.TrainerID)
+    : findAll({ upcomingOnly: isMember, activeOnly: isMember });
   const [classes, classTypes, trainers] = await Promise.all([
-    findAll({ upcomingOnly: isMember }),
+    classesPromise,
     findClassTypes(),
     findActiveTrainers(),
   ]);
@@ -198,28 +152,37 @@ export async function getClass(classId) {
   return requireClass(classId);
 }
 
-export async function listTrainerClasses(userId) {
-  const trainer = await requireTrainerProfile(userId);
-  return findByTrainer(trainer.TrainerID);
+export async function listTrainerClasses(user, trainerId) {
+  await assertTrainerExists(trainerId);
+  if (user.role === 'trainer') {
+    const trainer = await requireTrainerProfile(user.userId);
+    if (trainer.TrainerID !== trainerId) {
+      throw new ApiError(403, 'You can only view your own classes', 'FORBIDDEN');
+    }
+  }
+
+  return findByTrainer(trainerId);
 }
 
 export async function createClass(user, payload) {
   const trainerId = await resolveTrainerIdForCreate(user, payload);
-  await validateReferences({ classTypeId: payload.classTypeId, trainerId });
-  const classTypes = await findClassTypes();
-  const classType = classTypes.find((type) => type.ClassTypeID === payload.classTypeId);
+  await assertTrainerExists(trainerId);
+  const classType = await resolveClassType(payload.category);
+  await validateClassTypeId(classType.ClassTypeID);
 
   const { startDateTime, endDateTime } = resolveDateTimes(payload);
   assertValidClassTimes(startDateTime, endDateTime);
 
   const classId = await create({
-    classTypeId: payload.classTypeId,
+    name: payload.name,
+    classTypeId: classType.ClassTypeID,
     trainerId,
     startDateTime,
     endDateTime,
     maxCapacity: payload.maxCapacity,
-    price: payload.price ?? classType?.Price ?? 0,
-    status: payload.status,
+    price: classType.Price ?? 0,
+    room: payload.room,
+    status: 'scheduled',
   });
 
   return findById(classId);
@@ -228,23 +191,27 @@ export async function createClass(user, payload) {
 export async function updateClass(user, classId, payload) {
   const existing = await requireClass(classId);
   assertCanManage(user, existing);
+  if (existing.Status === 'cancelled') {
+    throw new ApiError(400, 'Cancelled classes cannot be updated', 'CLASS_CANCELLED');
+  }
+  assertCanChangeCapacity(payload, existing);
 
-  const { startDateTime, endDateTime } = resolveDateTimes(payload, existing);
-  const nextStart = startDateTime ?? existing.StartDateTime;
-  const nextEnd = endDateTime ?? existing.EndDateTime;
-  assertValidClassTimes(nextStart, nextEnd);
+  const classType = await resolveClassType(payload.category);
+  const { startDateTime, endDateTime } = resolveDateTimes(payload);
+  assertValidClassTimes(startDateTime, endDateTime);
 
   const trainerId = resolveTrainerIdForUpdate(user, payload, existing);
-  await validateReferences({ classTypeId: payload.classTypeId, trainerId });
+  if (trainerId !== undefined) await assertTrainerExists(trainerId);
 
   await update(classId, {
-    classTypeId: payload.classTypeId,
+    name: payload.name,
+    classTypeId: classType.ClassTypeID,
     trainerId,
     startDateTime,
     endDateTime,
     maxCapacity: payload.maxCapacity,
-    price: payload.price,
-    status: payload.status,
+    price: classType.Price ?? existing.Price,
+    room: payload.room,
   });
 
   return findById(classId);
@@ -261,7 +228,7 @@ export async function joinClass(user, classId, payload) {
   const existing = await requireClass(classId);
 
   if (existing.Status !== 'scheduled') {
-    throw new ApiError(400, 'Only scheduled classes can be joined', 'CLASS_NOT_AVAILABLE');
+    throw new ApiError(400, 'Only active classes can be joined', 'CLASS_NOT_AVAILABLE');
   }
 
   if (new Date(existing.StartDateTime) < new Date()) {

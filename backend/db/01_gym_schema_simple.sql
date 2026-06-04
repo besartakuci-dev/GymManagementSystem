@@ -92,6 +92,7 @@ CREATE TABLE Class_Types (
 
 CREATE TABLE Classes (
     ClassID         INT             AUTO_INCREMENT PRIMARY KEY,
+    Name            VARCHAR(100)    NOT NULL,
     ClassTypeID     INT             NOT NULL,
     TrainerID       INT             NOT NULL,
     StartDateTime   DATETIME        NOT NULL,
@@ -108,6 +109,8 @@ CREATE TABLE Classes (
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT chk_class_time CHECK (EndDateTime > StartDateTime),
     CONSTRAINT chk_class_capacity CHECK (MaxCapacity > 0),
+    CONSTRAINT chk_class_room CHECK (CHAR_LENGTH(Room) <= 50),
+    INDEX idx_classes_name (Name),
     INDEX idx_classes_type (ClassTypeID),
     INDEX idx_classes_trainer (TrainerID),
     INDEX idx_classes_start (StartDateTime),
