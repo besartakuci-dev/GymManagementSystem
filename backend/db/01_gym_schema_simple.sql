@@ -82,6 +82,7 @@ CREATE TABLE Class_Types (
     TypeName        VARCHAR(100)    NOT NULL UNIQUE,
     Category        VARCHAR(60),
     Description     TEXT,
+    Price           DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
     IsActive        BOOLEAN         NOT NULL DEFAULT TRUE,
     CreatedAt       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_class_types_active (IsActive),
@@ -96,8 +97,11 @@ CREATE TABLE Classes (
     StartDateTime   DATETIME        NOT NULL,
     EndDateTime     DATETIME        NOT NULL,
     MaxCapacity     INT             NOT NULL,
+    Price           DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
     Room            VARCHAR(50),
     Status          ENUM('scheduled', 'cancelled', 'completed') NOT NULL DEFAULT 'scheduled',
+    CreatedAt       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_classes_type FOREIGN KEY (ClassTypeID) REFERENCES Class_Types(ClassTypeID)
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_classes_trainer FOREIGN KEY (TrainerID) REFERENCES Trainers(TrainerID)
@@ -119,6 +123,10 @@ CREATE TABLE Bookings (
     ClassID         INT             NOT NULL,
     BookingDate     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     Status          ENUM('booked', 'attended', 'cancelled', 'no_show') NOT NULL DEFAULT 'booked',
+    Amount          DECIMAL(10,2)   NOT NULL DEFAULT 0.00,
+    PaymentMethod   ENUM('cash', 'card', 'bank_transfer') NOT NULL,
+    PaymentStatus   ENUM('pending', 'paid', 'refunded') NOT NULL DEFAULT 'paid',
+    PaidAt          TIMESTAMP       NULL DEFAULT NULL,
     CONSTRAINT fk_bookings_user FOREIGN KEY (UserID) REFERENCES Users(UserID)
         ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_bookings_class FOREIGN KEY (ClassID) REFERENCES Classes(ClassID)

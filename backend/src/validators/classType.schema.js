@@ -6,6 +6,7 @@ const classTypeBody = z.object({
   typeName: z.string().min(1, 'Class type name is required').max(100),
   category: z.string().max(60).optional(),
   description: z.string().max(1000).optional(),
+  price: z.coerce.number().nonnegative('Price cannot be negative').optional(),
   isActive: z.boolean().optional(),
 });
 

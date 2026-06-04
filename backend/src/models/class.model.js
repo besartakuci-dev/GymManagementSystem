@@ -57,8 +57,11 @@ const CLASS_SELECT = `
     c.StartDateTime,
     c.EndDateTime,
     c.MaxCapacity,
+    c.Price,
     c.Room,
     c.Status,
+    c.CreatedAt,
+    c.UpdatedAt,
     COUNT(CASE WHEN b.Status = 'booked' THEN 1 END) AS BookedCount
   FROM Classes c
   JOIN Class_Types ct ON ct.ClassTypeID = c.ClassTypeID
@@ -70,7 +73,8 @@ const CLASS_SELECT = `
 const CLASS_GROUP_ORDER = `
   GROUP BY
     c.ClassID, c.ClassTypeID, ct.TypeName, ct.Category, c.TrainerID, u.UserID,
-    u.FirstName, u.LastName, c.StartDateTime, c.EndDateTime, c.MaxCapacity, c.Room, c.Status
+    u.FirstName, u.LastName, c.StartDateTime, c.EndDateTime, c.MaxCapacity, c.Price,
+    c.Room, c.Status, c.CreatedAt, c.UpdatedAt
   ORDER BY c.StartDateTime ASC
 `;
 
@@ -81,6 +85,16 @@ export async function findAll({ upcomingOnly = true } = {}) {
 
   const [rows] = await pool.execute(`${CLASS_SELECT} ${where} ${CLASS_GROUP_ORDER}`);
   return rows;
+}
+
+export async function findBookedClassIdsByUser(userId) {
+  const [rows] = await pool.execute(
+    `SELECT ClassID
+     FROM Bookings
+     WHERE UserID = ? AND Status = 'booked'`,
+    [userId]
+  );
+  return rows.map((row) => row.ClassID);
 }
 
 export async function findById(classId) {
@@ -101,11 +115,11 @@ export async function findByTrainer(trainerId) {
   return rows;
 }
 
-export async function create({ classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, status }) {
+export async function create({ classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, price, status }) {
   const [result] = await pool.execute(
-    `INSERT INTO Classes (ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Status)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, status ?? 'scheduled']
+    `INSERT INTO Classes (ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Price, Status)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, price ?? 0, status ?? 'scheduled']
   );
 
   return result.insertId;
@@ -118,6 +132,7 @@ export async function update(classId, fields) {
     startDateTime: 'StartDateTime',
     endDateTime: 'EndDateTime',
     maxCapacity: 'MaxCapacity',
+    price: 'Price',
     status: 'Status',
   };
 
@@ -144,9 +159,40 @@ export async function updateStatus(classId, status) {
   return result.affectedRows;
 }
 
+export async function findBookingByUserAndClass(userId, classId) {
+  const [rows] = await pool.execute(
+    `SELECT BookingID, UserID, ClassID, Status
+     FROM Bookings
+     WHERE UserID = ? AND ClassID = ?
+     LIMIT 1`,
+    [userId, classId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function createBooking({ userId, classId, amount, paymentMethod }) {
+  const [result] = await pool.execute(
+    `INSERT INTO Bookings (UserID, ClassID, Status, Amount, PaymentMethod, PaymentStatus, PaidAt)
+     VALUES (?, ?, 'booked', ?, ?, 'paid', NOW())`,
+    [userId, classId, amount, paymentMethod]
+  );
+  return result.insertId;
+}
+
+export async function findBookingById(bookingId) {
+  const [rows] = await pool.execute(
+    `SELECT BookingID, UserID, ClassID, BookingDate, Status, Amount, PaymentMethod, PaymentStatus, PaidAt
+     FROM Bookings
+     WHERE BookingID = ?
+     LIMIT 1`,
+    [bookingId]
+  );
+  return rows[0] ?? null;
+}
+
 export async function findClassTypes() {
   const [rows] = await pool.execute(
-    `SELECT ClassTypeID, TypeName, Category, Description, IsActive
+    `SELECT ClassTypeID, TypeName, Category, Description, Price, IsActive
      FROM Class_Types
      WHERE IsActive = TRUE
      ORDER BY TypeName ASC`
@@ -157,7 +203,7 @@ export async function findClassTypes() {
 
 export async function findAllClassTypes() {
   const [rows] = await pool.execute(
-    `SELECT ClassTypeID, TypeName, Category, Description, IsActive, CreatedAt
+    `SELECT ClassTypeID, TypeName, Category, Description, Price, IsActive, CreatedAt
      FROM Class_Types
      ORDER BY IsActive DESC, TypeName ASC`
   );
@@ -167,7 +213,7 @@ export async function findAllClassTypes() {
 
 export async function findClassTypeById(classTypeId) {
   const [rows] = await pool.execute(
-    `SELECT ClassTypeID, TypeName, Category, Description, IsActive, CreatedAt
+    `SELECT ClassTypeID, TypeName, Category, Description, Price, IsActive, CreatedAt
      FROM Class_Types
      WHERE ClassTypeID = ?
      LIMIT 1`,
@@ -177,11 +223,11 @@ export async function findClassTypeById(classTypeId) {
   return rows[0] ?? null;
 }
 
-export async function createClassType({ typeName, category, description }) {
+export async function createClassType({ typeName, category, description, price }) {
   const [result] = await pool.execute(
-    `INSERT INTO Class_Types (TypeName, Category, Description)
-     VALUES (?, ?, ?)`,
-    [typeName, category ?? null, description ?? null]
+    `INSERT INTO Class_Types (TypeName, Category, Description, Price)
+     VALUES (?, ?, ?, ?)`,
+    [typeName, category ?? null, description ?? null, price ?? 0]
   );
 
   return result.insertId;
@@ -192,6 +238,7 @@ export async function updateClassType(classTypeId, fields) {
     typeName: 'TypeName',
     category: 'Category',
     description: 'Description',
+    price: 'Price',
     isActive: 'IsActive',
   };
 

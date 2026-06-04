@@ -1,13 +1,13 @@
 import {
-  getClassesDashboard,
-  getClassBookings,
   cancelClass,
   createClass,
+  getClassesDashboard,
+  getClassBookings,
   getClass,
+  joinClass,
   listClasses,
   updateClass,
 } from '../services/class.service.js';
-
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/response.js';
 
@@ -37,7 +37,7 @@ export const classBookingsController = asyncHandler(async (req, res) => {
 });
 
 export const listClassesController = asyncHandler(async (req, res) => {
-  const data = await listClasses();
+  const data = await listClasses(req.user);
   sendSuccess(res, {
     ...data,
     classes: data.classes.map(withSchedule),
@@ -62,4 +62,9 @@ export const updateClassController = asyncHandler(async (req, res) => {
 export const cancelClassController = asyncHandler(async (req, res) => {
   const gymClass = await cancelClass(req.user, req.validated.params.id);
   sendSuccess(res, { class: withSchedule(gymClass) }, 'Class cancelled successfully');
+});
+
+export const joinClassController = asyncHandler(async (req, res) => {
+  const data = await joinClass(req.user, req.validated.params.id, req.validated.body);
+  sendSuccess(res, { ...data, class: withSchedule(data.class) }, 'Class booked successfully', 201);
 });

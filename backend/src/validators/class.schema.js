@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const statusSchema = z.enum(['scheduled', 'cancelled', 'completed']);
+const paymentMethodSchema = z.enum(['cash', 'card', 'bank_transfer']);
 const idParam = z.coerce.number().int().positive('Invalid class id');
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -35,6 +36,7 @@ const baseClassBody = z.object({
   startDateTime: dateTime.optional(),
   endDateTime: dateTime.optional(),
   maxCapacity: z.coerce.number().int().positive('Capacity must be greater than 0'),
+  price: z.coerce.number().nonnegative('Price cannot be negative').optional(),
   status: statusSchema.default('scheduled'),
 });
 
@@ -110,4 +112,11 @@ export const updateClassSchema = z.object({
 
 export const classIdSchema = z.object({
   params: z.object({ id: idParam }),
+});
+
+export const joinClassSchema = z.object({
+  params: z.object({ id: idParam }),
+  body: z.object({
+    paymentMethod: paymentMethodSchema,
+  }),
 });

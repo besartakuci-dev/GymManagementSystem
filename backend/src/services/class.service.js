@@ -3,8 +3,12 @@ import {
   getBookingsByClassId,
   classTypeExists,
   create,
+  createBooking,
   findActiveTrainers,
   findAll,
+  findBookedClassIdsByUser,
+  findBookingById,
+  findBookingByUserAndClass,
   findById,
   findByTrainer,
   findClassTypes,
@@ -129,8 +133,6 @@ async function validateReferences({ classTypeId, trainerId }) {
   }
 }
 
-<<<<<<< HEAD
-=======
 export async function getClassesDashboard() {
   return await getDashboardClasses();
 }
@@ -139,7 +141,6 @@ export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
 }
 
->>>>>>> feature/admin-dashboard
 function assertValidClassTimes(startDateTime, endDateTime) {
   if (new Date(endDateTime) <= new Date(startDateTime)) {
     throw new ApiError(400, 'End date/time must be after start date/time', 'INVALID_CLASS_TIME');
@@ -170,12 +171,25 @@ function resolveTrainerIdForUpdate(user, payload, existing) {
   return undefined;
 }
 
-export async function listClasses() {
+export async function listClasses(user) {
+  const isMember = user?.role === 'member';
   const [classes, classTypes, trainers] = await Promise.all([
-    findAll({ upcomingOnly: true }),
+    findAll({ upcomingOnly: isMember }),
     findClassTypes(),
     findActiveTrainers(),
   ]);
+
+  if (isMember) {
+    const bookedClassIds = new Set(await findBookedClassIdsByUser(user.userId));
+    return {
+      classes: classes.map((gymClass) => ({
+        ...gymClass,
+        IsBookedByCurrentUser: bookedClassIds.has(gymClass.ClassID),
+      })),
+      classTypes,
+      trainers,
+    };
+  }
 
   return { classes, classTypes, trainers };
 }
@@ -192,6 +206,8 @@ export async function listTrainerClasses(userId) {
 export async function createClass(user, payload) {
   const trainerId = await resolveTrainerIdForCreate(user, payload);
   await validateReferences({ classTypeId: payload.classTypeId, trainerId });
+  const classTypes = await findClassTypes();
+  const classType = classTypes.find((type) => type.ClassTypeID === payload.classTypeId);
 
   const { startDateTime, endDateTime } = resolveDateTimes(payload);
   assertValidClassTimes(startDateTime, endDateTime);
@@ -202,6 +218,7 @@ export async function createClass(user, payload) {
     startDateTime,
     endDateTime,
     maxCapacity: payload.maxCapacity,
+    price: payload.price ?? classType?.Price ?? 0,
     status: payload.status,
   });
 
@@ -226,6 +243,7 @@ export async function updateClass(user, classId, payload) {
     startDateTime,
     endDateTime,
     maxCapacity: payload.maxCapacity,
+    price: payload.price,
     status: payload.status,
   });
 
@@ -237,4 +255,34 @@ export async function cancelClass(user, classId) {
   assertCanManage(user, existing);
   await updateStatus(classId, 'cancelled');
   return findById(classId);
+}
+
+export async function joinClass(user, classId, payload) {
+  const existing = await requireClass(classId);
+
+  if (existing.Status !== 'scheduled') {
+    throw new ApiError(400, 'Only scheduled classes can be joined', 'CLASS_NOT_AVAILABLE');
+  }
+
+  if (new Date(existing.StartDateTime) < new Date()) {
+    throw new ApiError(400, 'Past classes cannot be joined', 'CLASS_ALREADY_STARTED');
+  }
+
+  if (Number(existing.BookedCount) >= Number(existing.MaxCapacity)) {
+    throw new ApiError(400, 'Class is full', 'CLASS_FULL');
+  }
+
+  const existingBooking = await findBookingByUserAndClass(user.userId, classId);
+  if (existingBooking) {
+    throw new ApiError(409, 'You have already joined this class', 'CLASS_ALREADY_JOINED');
+  }
+
+  const bookingId = await createBooking({
+    userId: user.userId,
+    classId,
+    amount: existing.Price,
+    paymentMethod: payload.paymentMethod,
+  });
+  const [booking, gymClass] = await Promise.all([findBookingById(bookingId), findById(classId)]);
+  return { booking, class: gymClass };
 }
