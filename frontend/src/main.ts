@@ -6,6 +6,7 @@ import 'primeicons/primeicons.css'
 import './styles/base.css'
 import GymPreset from './theme'
 import App from './App.vue'
+import ToastService from 'primevue/toastservice'
 
 const app = createApp(App)
 
@@ -16,5 +17,6 @@ app.use(PrimeVue, {
     options: { darkModeSelector: '.dark' },
   },
 })
+app.use(ToastService)
 app.use(router)
 app.mount('#app')

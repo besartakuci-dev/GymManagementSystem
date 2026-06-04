@@ -1,5 +1,48 @@
 import { pool } from '../config/db.js';
 
+export async function getDashboardClasses() {
+  const [rows] = await pool.execute(`
+    SELECT
+      c.ClassID,
+      c.ClassName,
+      c.StartDateTime,
+      c.EndDateTime,
+      c.MaxCapacity,
+      c.Room,
+      c.Status,
+      COUNT(b.BookingID) AS BookedSpots
+    FROM Classes c
+    LEFT JOIN Bookings b ON c.ClassID = b.ClassID
+    GROUP BY c.ClassID
+    ORDER BY c.StartDateTime ASC
+  `);
+
+  return rows;
+}
+
+export async function getBookingsByClassId(classId) {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      b.BookingID,
+      b.ClassID,
+      b.UserID,
+      u.FirstName,
+      u.LastName,
+      u.Email,
+      b.BookingDate,
+      b.Status
+    FROM Bookings b
+    JOIN Users u ON b.UserID = u.UserID
+    WHERE b.ClassID = ?
+    ORDER BY b.BookingDate DESC
+    `,
+    [classId]
+  );
+
+  return rows;
+}
+
 const CLASS_SELECT = `
   SELECT
     c.ClassID,
@@ -35,6 +78,7 @@ export async function findAll({ upcomingOnly = true } = {}) {
   const where = upcomingOnly
     ? `WHERE c.Status = 'scheduled' AND c.StartDateTime >= NOW()`
     : '';
+
   const [rows] = await pool.execute(`${CLASS_SELECT} ${where} ${CLASS_GROUP_ORDER}`);
   return rows;
 }
@@ -44,6 +88,7 @@ export async function findById(classId) {
     `${CLASS_SELECT} WHERE c.ClassID = ? ${CLASS_GROUP_ORDER} LIMIT 1`,
     [classId]
   );
+
   return rows[0] ?? null;
 }
 
@@ -52,6 +97,7 @@ export async function findByTrainer(trainerId) {
     `${CLASS_SELECT} WHERE c.TrainerID = ? ${CLASS_GROUP_ORDER}`,
     [trainerId]
   );
+
   return rows;
 }
 
@@ -61,6 +107,7 @@ export async function create({ classTypeId, trainerId, startDateTime, endDateTim
      VALUES (?, ?, ?, ?, ?, ?)`,
     [classTypeId, trainerId, startDateTime, endDateTime, maxCapacity, status ?? 'scheduled']
   );
+
   return result.insertId;
 }
 
@@ -84,6 +131,7 @@ export async function update(classId, fields) {
     `UPDATE Classes SET ${assignments.join(', ')} WHERE ClassID = ?`,
     [...values, classId]
   );
+
   return result.affectedRows;
 }
 
@@ -92,6 +140,7 @@ export async function updateStatus(classId, status) {
     `UPDATE Classes SET Status = ? WHERE ClassID = ?`,
     [status, classId]
   );
+
   return result.affectedRows;
 }
 
@@ -102,6 +151,7 @@ export async function findClassTypes() {
      WHERE IsActive = TRUE
      ORDER BY TypeName ASC`
   );
+
   return rows;
 }
 
@@ -111,6 +161,7 @@ export async function findAllClassTypes() {
      FROM Class_Types
      ORDER BY IsActive DESC, TypeName ASC`
   );
+
   return rows;
 }
 
@@ -122,6 +173,7 @@ export async function findClassTypeById(classTypeId) {
      LIMIT 1`,
     [classTypeId]
   );
+
   return rows[0] ?? null;
 }
 
@@ -131,6 +183,7 @@ export async function createClassType({ typeName, category, description }) {
      VALUES (?, ?, ?)`,
     [typeName, category ?? null, description ?? null]
   );
+
   return result.insertId;
 }
 
@@ -152,6 +205,7 @@ export async function updateClassType(classTypeId, fields) {
     `UPDATE Class_Types SET ${assignments.join(', ')} WHERE ClassTypeID = ?`,
     [...values, classTypeId]
   );
+
   return result.affectedRows;
 }
 
@@ -160,6 +214,7 @@ export async function deactivateClassType(classTypeId) {
     `UPDATE Class_Types SET IsActive = FALSE WHERE ClassTypeID = ?`,
     [classTypeId]
   );
+
   return result.affectedRows;
 }
 
@@ -175,6 +230,7 @@ export async function findActiveTrainers() {
      WHERE u.IsActive = TRUE
      ORDER BY u.FirstName ASC, u.LastName ASC`
   );
+
   return rows;
 }
 
@@ -183,6 +239,7 @@ export async function findTrainerByUserId(userId) {
     `SELECT TrainerID, UserID FROM Trainers WHERE UserID = ? LIMIT 1`,
     [userId]
   );
+
   return rows[0] ?? null;
 }
 
@@ -191,6 +248,7 @@ export async function classTypeExists(classTypeId) {
     `SELECT ClassTypeID FROM Class_Types WHERE ClassTypeID = ? AND IsActive = TRUE LIMIT 1`,
     [classTypeId]
   );
+
   return Boolean(rows[0]);
 }
 
@@ -203,5 +261,6 @@ export async function trainerExists(trainerId) {
      LIMIT 1`,
     [trainerId]
   );
+
   return Boolean(rows[0]);
 }
