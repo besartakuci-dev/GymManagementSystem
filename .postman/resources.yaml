@@ -1,0 +1,10 @@
+# Use this workspace to collaborate
+workspace:
+  id: 9a8b3e1c-d825-4167-8266-f1dea486b3b3
+
+localResources:
+  docs:
+    - ..\frontend\README.md
+    - ..\backend\Tasks.md
+    - ..\backend\SETUP.md
+    - ..\backend\README.md
