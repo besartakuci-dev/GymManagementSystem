@@ -1,4 +1,13 @@
-import { cancelClass, createClass, getClass, listClasses, updateClass } from '../services/class.service.js';
+import {
+  getClassesDashboard,
+  getClassBookings,
+  cancelClass,
+  createClass,
+  getClass,
+  listClasses,
+  updateClass,
+} from '../services/class.service.js';
+
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/response.js';
 
@@ -12,6 +21,20 @@ function withSchedule(gymClass) {
     trainerId: gymClass.TrainerID,
   };
 }
+
+export const dashboardController = asyncHandler(async (req, res) => {
+  const classes = await getClassesDashboard();
+
+  sendSuccess(res, { classes });
+});
+
+export const classBookingsController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const bookings = await getClassBookings(id);
+
+  sendSuccess(res, { bookings });
+});
 
 export const listClassesController = asyncHandler(async (req, res) => {
   const data = await listClasses();
