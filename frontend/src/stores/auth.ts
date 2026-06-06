@@ -21,11 +21,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setUser(u: any) {
     user.value = u
+    initialized.value = true
   }
 
   function logout() {
     localStorage.removeItem('token')
     user.value = null
+    initialized.value = false
   }
 
   return { user, initialized, init, setUser, logout }

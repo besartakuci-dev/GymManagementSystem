@@ -83,21 +83,29 @@ const classes = [
         <p>Find the right class for your goals and fitness level.</p>
       </div>
       <div class="classes-grid">
-        <Card v-for="c in classes" :key="c.title" class="class-card">
-          <template #header>
-            <img :src="c.image" :alt="c.title" class="class-img" />
-          </template>
-          <template #content>
-            <div class="card-body">
-              <h3>{{ c.title }}</h3>
-              <div class="meta">
-                <span><i class="pi pi-bolt" /> {{ c.level }}</span>
-                <span><i class="pi pi-clock" /> {{ c.duration }}</span>
+        <RouterLink
+          v-for="c in classes"
+          :key="c.title"
+          :to="{ path: '/classes', query: { type: c.title } }"
+          class="class-link"
+        >
+          <Card class="class-card">
+            <template #header>
+              <img :src="c.image" :alt="c.title" class="class-img" />
+            </template>
+            <template #content>
+              <div class="card-body">
+                <h3>{{ c.title }}</h3>
+                <div class="meta">
+                  <span><i class="pi pi-bolt" /> {{ c.level }}</span>
+                  <span><i class="pi pi-clock" /> {{ c.duration }}</span>
+                </div>
+                <p>{{ c.desc }}</p>
+                <span class="view-schedule">View Schedule <i class="pi pi-arrow-right" /></span>
               </div>
-              <p>{{ c.desc }}</p>
-            </div>
-          </template>
-        </Card>
+            </template>
+          </Card>
+        </RouterLink>
       </div>
     </section>
 
@@ -208,10 +216,34 @@ main {
   gap: 1.5rem;
 }
 
+.class-link {
+  text-decoration: none;
+  display: block;
+}
+
+.class-link:hover .class-card {
+  border-color: var(--gym-orange) !important;
+}
+
+.class-link:hover .class-img {
+  transform: scale(1.04);
+}
+
 .class-card {
   background: var(--gym-surface) !important;
   border: 1px solid var(--gym-border) !important;
   overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.view-schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gym-orange);
+  margin-top: 0.75rem;
 }
 
 .class-img {
@@ -219,6 +251,7 @@ main {
   height: 200px;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s;
 }
 
 .card-body h3 {
@@ -247,4 +280,5 @@ main {
   color: var(--gym-text-muted);
   line-height: 1.6;
 }
+
 </style>

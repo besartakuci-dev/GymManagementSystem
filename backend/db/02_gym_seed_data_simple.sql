@@ -1,43 +1,43 @@
-USE gym_db;
+﻿USE gym_db;
 
 
 -- USERS  (1 admin + 3 trainers + 10 members = 14 users)
 
 INSERT INTO Users (UserID, Email, PasswordHash, Role, FirstName, LastName, Phone, DateOfBirth, JoinDate, IsActive) VALUES
 -- Admin
-(1,  'admin@bbrosgym.com',         '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
+(1,  'admin@bbrosgym.com',         '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
 -- Trainers
-(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
-(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
-(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
+(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
+(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
+(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
 -- Members
-(5,  'egzon.krasniqi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
-(6,  'blerta.hoxha@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
-(7,  'drilon.berisha@hotmail.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
-(8,  'fatlinda.gashi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
-(9,  'gentian.shala@yahoo.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
-(10, 'hana.bajrami@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
-(11, 'ilir.krasniqi@gmail.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
-(12, 'jeta.sylejmani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
-(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
-(14, 'mirjeta.hasani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
+(5,  'egzon.krasniqi@gmail.com',    '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
+(6,  'blerta.hoxha@gmail.com',      '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
+(7,  'drilon.berisha@hotmail.com',  '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
+(8,  'fatlinda.gashi@gmail.com',    '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
+(9,  'gentian.shala@yahoo.com',     '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
+(10, 'hana.bajrami@gmail.com',      '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
+(11, 'ilir.krasniqi@gmail.com',     '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
+(12, 'jeta.sylejmani@gmail.com',    '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
+(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
+(14, 'mirjeta.hasani@gmail.com',    '$2b$10$Ntj5rO6qyTjL0TsO4vwoROc3k9aCsP8HOE28f5kWLPhoVgBlo6aAu', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
 
 
 -- TRAINERS
 
 INSERT INTO Trainers (TrainerID, UserID, Specialization, HireDate, Salary, Bio) VALUES
-(1, 2, 'Bodybuilding & Forcë', '2020-01-15', 850.00, 'Trajner i certifikuar me 10+ vite përvojë në bodybuilding dhe trajnim force.'),
-(2, 3, 'Joga & Pilates',        '2021-03-25', 720.00, 'Mësimdhënëse joga e certifikuar (RYT-200), specializuar në Vinyasa dhe Pilates.'),
-(3, 4, 'HIIT & Kardio',         '2019-09-05', 800.00, 'Specializuar në programe HIIT, spinning dhe trajnim kardiovaskular.');
+(1, 2, 'Bodybuilding & ForcÃ«', '2020-01-15', 850.00, 'Trajner i certifikuar me 10+ vite pÃ«rvojÃ« nÃ« bodybuilding dhe trajnim force.'),
+(2, 3, 'Joga & Pilates',        '2021-03-25', 720.00, 'MÃ«simdhÃ«nÃ«se joga e certifikuar (RYT-200), specializuar nÃ« Vinyasa dhe Pilates.'),
+(3, 4, 'HIIT & Kardio',         '2019-09-05', 800.00, 'Specializuar nÃ« programe HIIT, spinning dhe trajnim kardiovaskular.');
 
 
 -- MEMBERSHIP PLANS
 
 INSERT INTO Membership_Plans (PlanID, PlanName, DurationMonths, Price, IncludesClasses, Description) VALUES
-(1, 'Bazik',    1, 25.00,  FALSE, 'Qasje në palestër, pa klasa në grup.'),
-(2, 'Standard', 1, 40.00,  TRUE,  'Qasje e plotë në palestër + klasa në grup.'),
-(3, 'Premium',  1, 65.00,  TRUE,  'Gjithçka e Standard + qasje prioritare në klasa.'),
-(4, 'Vjetor',  12, 420.00, TRUE,  'Plani Standard për 12 muaj — kursim 60 EUR.');
+(1, 'Bazik',    1, 25.00,  FALSE, 'Qasje nÃ« palestÃ«r, pa klasa nÃ« grup.'),
+(2, 'Standard', 1, 40.00,  TRUE,  'Qasje e plotÃ« nÃ« palestÃ«r + klasa nÃ« grup.'),
+(3, 'Premium',  1, 65.00,  TRUE,  'GjithÃ§ka e Standard + qasje prioritare nÃ« klasa.'),
+(4, 'Vjetor',  12, 420.00, TRUE,  'Plani Standard pÃ«r 12 muaj â€” kursim 60 EUR.');
 
 
 -- MEMBERSHIPS 
@@ -86,16 +86,16 @@ INSERT INTO Classes (ClassID, ClassTypeID, TrainerID, StartDateTime, EndDateTime
 -- BOOKINGS
 
 INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status) VALUES
--- Past — Class 1 (Joga)
+-- Past â€” Class 1 (Joga)
 (1,  6,  1, '2025-05-10 10:22:00', 'attended'),
 (2,  8,  1, '2025-05-11 14:18:00', 'attended'),
 (3,  12, 1, '2025-05-12 08:00:00', 'attended'),
 (4,  14, 1, '2025-05-11 21:30:00', 'no_show'),
--- Past — Class 2 (HIIT)
+-- Past â€” Class 2 (HIIT)
 (5,  5,  2, '2025-05-12 09:15:00', 'attended'),
 (6,  7,  2, '2025-05-12 19:00:00', 'attended'),
 (7,  10, 2, '2025-05-13 07:45:00', 'attended'),
--- Past — Class 3 (Forcë)
+-- Past â€” Class 3 (ForcÃ«)
 (8,  5,  3, '2025-05-13 11:00:00', 'attended'),
 (9,  7,  3, '2025-05-13 16:30:00', 'attended'),
 (10, 13, 3, '2025-05-14 08:00:00', 'attended'),

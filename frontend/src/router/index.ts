@@ -8,9 +8,11 @@ import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
 import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
-import AdminPage        from '@/pages/admin/AdminPage.vue'
-import MembersPage      from '@/pages/admin/MembersPage.vue'
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
+import AdminLayout      from '@/layouts/AdminLayout.vue'
+import AdminDashboard   from '@/pages/admin/AdminDashboard.vue'
+import MembersPage      from '@/pages/admin/MembersPage.vue'
+import CreateUserPage   from '@/pages/admin/CreateUserPage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -51,16 +53,16 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['trainer', 'admin'] },
     },
 
-    // Admin only
+    // Admin — nested under AdminLayout (sidebar)
     {
       path: '/admin',
-      component: AdminPage,
+      component: AdminLayout,
       meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/members',
-      component: MembersPage,
-      meta: { requiresAuth: true, roles: ['admin'] },
+      children: [
+        { path: '',             component: AdminDashboard },
+        { path: 'members',      component: MembersPage },
+        { path: 'users/create', component: CreateUserPage },
+      ],
     },
   ],
 })
@@ -68,7 +70,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  if (!auth.initialized) await auth.init()
+  await auth.init()
 
   if (to.path === '/login' && auth.user) return '/home'
 

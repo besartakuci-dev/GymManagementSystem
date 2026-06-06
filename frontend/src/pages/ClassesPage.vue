@@ -1,23 +1,28 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import Card from 'primevue/card'
+import Button from 'primevue/button'
+
+const route  = useRoute()
+const router = useRouter()
 
 const classes = ref([])
 const loading = ref(true)
-const error = ref('')
+const error   = ref('')
 
 const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+const activeType = computed(() => route.query.type ?? null)
+
 const groupedClasses = computed(() => {
   const groups = new Map()
-
   for (const gymClass of classes.value) {
     const name = gymClass.ClassTypeName
     if (!groups.has(name)) groups.set(name, [])
     groups.get(name).push(gymClass)
   }
-
   return [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, sessions]) => ({
@@ -30,10 +35,16 @@ const groupedClasses = computed(() => {
     }))
 })
 
+const visibleGroups = computed(() => {
+  if (!activeType.value) return groupedClasses.value
+  return groupedClasses.value.filter(g =>
+    g.name.toLowerCase() === activeType.value.toLowerCase()
+  )
+})
+
 const fetchClasses = async () => {
   loading.value = true
   error.value = ''
-
   try {
     const res = await axios.get('http://localhost:3000/api/classes')
     classes.value = res.data.data.classes ?? []
@@ -45,23 +56,40 @@ const fetchClasses = async () => {
   }
 }
 
+function clearFilter() {
+  router.push({ path: '/classes' })
+}
+
 onMounted(fetchClasses)
 </script>
 
 <template>
   <main class="page">
     <section class="classes">
+
       <div class="section-header">
-        <h1>Our Classes</h1>
-        <p>Weekly schedule grouped by class type.</p>
+        <div>
+          <h1>
+            {{ activeType ?? 'All Classes' }}
+          </h1>
+          <p>{{ activeType ? `Schedule for ${activeType} classes.` : 'Weekly schedule grouped by class type.' }}</p>
+        </div>
+        <Button
+          v-if="activeType"
+          label="All Classes"
+          icon="pi pi-times"
+          severity="secondary"
+          size="small"
+          @click="clearFilter"
+        />
       </div>
 
       <p v-if="loading" class="status">Loading classes...</p>
       <p v-else-if="error" class="status error">{{ error }}</p>
-      <p v-else-if="!groupedClasses.length" class="status">No upcoming classes scheduled.</p>
+      <p v-else-if="!visibleGroups.length" class="status">No upcoming classes scheduled.</p>
 
       <div v-else class="groups">
-        <Card v-for="group in groupedClasses" :key="group.name" class="group-card">
+        <Card v-for="group in visibleGroups" :key="group.name" class="group-card">
           <template #title>
             <h2>{{ group.name }}</h2>
           </template>
@@ -69,15 +97,16 @@ onMounted(fetchClasses)
             <ul class="session-list">
               <li v-for="session in group.sessions" :key="session.ClassID" class="session">
                 <span class="session-day">{{ session.dayOfWeek }}</span>
-                <span class="session-separator">-</span>
+                <span class="session-separator">—</span>
                 <span class="session-time">{{ session.startTime }}</span>
-                <span class="session-separator">-</span>
+                <span class="session-separator">—</span>
                 <span class="session-trainer">{{ session.TrainerName }}</span>
               </li>
             </ul>
           </template>
         </Card>
       </div>
+
     </section>
   </main>
 </template>
@@ -95,7 +124,10 @@ onMounted(fetchClasses)
 }
 
 .section-header {
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 2.5rem;
 }
 
@@ -103,7 +135,8 @@ onMounted(fetchClasses)
   font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 800;
   color: var(--gym-text);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
+  text-transform: capitalize;
 }
 
 .section-header p {
@@ -116,9 +149,7 @@ onMounted(fetchClasses)
   color: var(--gym-text-muted);
 }
 
-.status.error {
-  color: var(--gym-orange);
-}
+.status.error { color: var(--gym-orange); }
 
 .groups {
   display: flex;
@@ -160,35 +191,15 @@ onMounted(fetchClasses)
   font-size: 0.95rem;
 }
 
-.session-day {
-  font-weight: 600;
-}
-
-.session-time {
-  color: var(--gym-orange);
-}
-
-.session-trainer {
-  color: var(--gym-text-muted);
-}
-
-.session-separator {
-  color: var(--gym-text-muted);
-}
+.session-day     { font-weight: 600; }
+.session-time    { color: var(--gym-orange); }
+.session-trainer { color: var(--gym-text-muted); }
+.session-separator { color: var(--gym-text-muted); }
 
 @media (max-width: 600px) {
-  .classes {
-    padding: 3rem 1.25rem 4rem;
-  }
-
-  .session {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-
-  .session-separator {
-    display: none;
-  }
+  .classes { padding: 3rem 1.25rem 4rem; }
+  .section-header { flex-direction: column; }
+  .session { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .session-separator { display: none; }
 }
 </style>

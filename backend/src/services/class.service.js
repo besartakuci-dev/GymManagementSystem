@@ -129,8 +129,6 @@ async function validateReferences({ classTypeId, trainerId }) {
   }
 }
 
-<<<<<<< HEAD
-=======
 export async function getClassesDashboard() {
   return await getDashboardClasses();
 }
@@ -139,7 +137,6 @@ export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
 }
 
->>>>>>> feature/admin-dashboard
 function assertValidClassTimes(startDateTime, endDateTime) {
   if (new Date(endDateTime) <= new Date(startDateTime)) {
     throw new ApiError(400, 'End date/time must be after start date/time', 'INVALID_CLASS_TIME');
