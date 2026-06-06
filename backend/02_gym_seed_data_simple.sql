@@ -5,22 +5,22 @@ USE gym_db;
 
 INSERT INTO Users (UserID, Email, PasswordHash, Role, FirstName, LastName, Phone, DateOfBirth, JoinDate, IsActive) VALUES
 -- Admin
-(1,  'admin@bbrosgym.com',         '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
+(1,  'admin@bbrosgym.com',         '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'admin',   'Admin',    'BBros',     '+38344000001', '1990-01-01', '2020-01-01', TRUE),
 -- Trainers
-(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
-(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
-(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
+(2,  'petrit.maliqi@bbrosgym.com', '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Petrit',   'Maliqi',    '+38344123456', '1988-03-15', '2020-01-10', TRUE),
+(3,  'saranda.krasniqi@bbrosgym.com', '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Saranda',  'Krasniqi',  '+38344234567', '1992-07-22', '2021-03-20', TRUE),
+(4,  'valbona.gashi@bbrosgym.com',  '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'trainer', 'Valbona',  'Gashi',     '+38344345678', '1990-11-08', '2019-09-01', TRUE),
 -- Members
-(5,  'egzon.krasniqi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
-(6,  'blerta.hoxha@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
-(7,  'drilon.berisha@hotmail.com',  '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
-(8,  'fatlinda.gashi@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
-(9,  'gentian.shala@yahoo.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
-(10, 'hana.bajrami@gmail.com',      '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
-(11, 'ilir.krasniqi@gmail.com',     '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
-(12, 'jeta.sylejmani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
-(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
-(14, 'mirjeta.hasani@gmail.com',    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
+(5,  'egzon.krasniqi@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Egzon',    'Krasniqi',  '+38344456789', '1996-05-12', '2024-02-15', TRUE),
+(6,  'blerta.hoxha@gmail.com',      '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Blerta',   'Hoxha',     '+38344567890', '1998-09-03', '2024-04-22', TRUE),
+(7,  'drilon.berisha@hotmail.com',  '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Drilon',   'Berisha',   '+38344678901', '1995-12-18', '2023-11-05', TRUE),
+(8,  'fatlinda.gashi@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Fatlinda', 'Gashi',     '+38344789012', '2000-04-25', '2025-01-10', TRUE),
+(9,  'gentian.shala@yahoo.com',     '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Gentian',  'Shala',     '+38344890123', '1993-08-30', '2024-08-12', TRUE),
+(10, 'hana.bajrami@gmail.com',      '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Hana',     'Bajrami',   '+38344901234', '1999-02-14', '2025-03-01', TRUE),
+(11, 'ilir.krasniqi@gmail.com',     '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Ilir',     'Krasniqi',  '+38345012345', '1985-06-07', '2023-05-18', TRUE),
+(12, 'jeta.sylejmani@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Jeta',     'Sylejmani', '+38345123456', '1997-10-21', '2024-11-30', TRUE),
+(13, 'kushtrim.maliqi@gmail.com',   '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Kushtrim', 'Maliqi',    '+38345234567', '1994-01-17', '2022-07-04', TRUE),
+(14, 'mirjeta.hasani@gmail.com',    '$2b$10$zJF5sQErLTHtGUhhISve6ei4vxTeYMM5FJShx/hNjmU6OabMyulsK', 'member',  'Mirjeta',  'Hasani',    '+38345345678', '2001-11-09', '2025-04-15', TRUE);
 
 
 -- TRAINERS

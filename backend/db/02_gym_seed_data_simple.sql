@@ -58,29 +58,25 @@ INSERT INTO Memberships (MembershipID, UserID, PlanID, StartDate, EndDate, Statu
 
 -- CLASS TYPES
 
-INSERT INTO Class_Types (ClassTypeID, TypeName, Category, Description) VALUES
-(1, 'Yoga',              'Flexibility', 'Mobility, balance, and mindful movement.'),
-(2, 'Pilates',           'Flexibility', 'Core strength, posture, and controlled movement.'),
-(3, 'Boxing',            'Cardio',      'Combat-inspired conditioning and coordination.'),
-(4, 'Strength Training', 'Strength',    'Progressive strength and hypertrophy sessions.'),
-(5, 'HIIT',              'Cardio',      'High intensity intervals for conditioning.'),
-(6, 'Zumba',             'Wellness',    'Dance fitness with upbeat cardio work.');
+INSERT INTO Class_Types (ClassTypeID, TypeName, Category, Description, Price) VALUES
+(1, 'Yoga',              'Yoga', 'Mobility, balance, and mindful movement.', 8.00),
+(2, 'Pilates',           'Pilates', 'Core strength, posture, and controlled movement.', 10.00);
 
 
 -- CLASSES  (each row = one scheduled occurrence)
 
-INSERT INTO Classes (ClassID, ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Room, Status) VALUES
+INSERT INTO Classes (ClassID, Name, ClassTypeID, TrainerID, StartDateTime, EndDateTime, MaxCapacity, Price, Room, Status) VALUES
 -- Past classes (completed)
-(1, 1, 2, '2026-05-12 18:00:00', '2026-05-12 19:00:00', 15, 'Salla 2',  'completed'),
-(2, 5, 3, '2026-05-13 19:00:00', '2026-05-13 19:45:00', 20, 'Salla 3',  'completed'),
-(3, 4, 1, '2026-05-14 17:00:00', '2026-05-14 18:00:00', 12, 'Salla 1',  'completed'),
+(1, 'Morning Yoga', 1, 2, '2026-05-12 18:00:00', '2026-05-12 19:00:00', 15, 8.00, 'Salla 2',  'completed'),
+(2, 'Pilates Core', 2, 3, '2026-05-13 19:00:00', '2026-05-13 19:45:00', 20, 10.00, 'Salla 3',  'completed'),
+(3, 'Yoga Beginner', 1, 1, '2026-05-14 17:00:00', '2026-05-14 18:00:00', 12, 8.00, 'Salla 1',  'completed'),
 -- Upcoming classes
-(4, 1, 2, '2026-06-10 18:00:00', '2026-06-10 19:00:00', 15, 'Salla 2',  'scheduled'),
-(5, 5, 3, '2026-06-11 19:00:00', '2026-06-11 19:45:00', 20, 'Salla 3',  'scheduled'),
-(6, 4, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 'Salla 1',  'scheduled'),
-(7, 6, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 'Salla 3',  'scheduled'),
-(8, 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 'Salla 2',  'scheduled'),
-(9, 3, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 'Salla 1',  'scheduled');
+(4, 'Morning Yoga', 1, 2, '2026-06-10 18:00:00', '2026-06-10 19:00:00', 15, 8.00, 'Salla 2',  'scheduled'),
+(5, 'Pilates Core', 2, 3, '2026-06-11 19:00:00', '2026-06-11 19:45:00', 20, 10.00, 'Salla 3',  'scheduled'),
+(6, 'Yoga Beginner', 1, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 8.00, 'Salla 1',  'scheduled'),
+(7, 'Pilates Balance', 2, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 10.00, 'Salla 3',  'scheduled'),
+(8, 'Pilates Flow', 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 10.00, 'Salla 2',  'scheduled'),
+(9, 'Yoga Mobility', 1, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 8.00, 'Salla 1',  'scheduled');
 
 
 -- BOOKINGS
@@ -100,15 +96,15 @@ INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status) VALUES
 (9,  7,  3, '2025-05-13 16:30:00', 'attended'),
 (10, 13, 3, '2025-05-14 08:00:00', 'attended'),
 -- Upcoming bookings
-(11, 6,  4, '2025-05-17 19:00:00', 'booked'),
-(12, 8,  4, '2025-05-17 20:15:00', 'booked'),
-(13, 12, 4, '2025-05-18 09:00:00', 'booked'),
-(14, 5,  5, '2025-05-17 22:00:00', 'booked'),
-(15, 7,  5, '2025-05-18 07:30:00', 'booked'),
-(16, 5,  6, '2025-05-18 12:00:00', 'booked'),
-(17, 13, 6, '2025-05-19 09:00:00', 'booked'),
-(18, 10, 7, '2025-05-19 18:45:00', 'booked'),
-(19, 12, 8, '2025-05-20 14:20:00', 'booked');
+(11, 6,  4, '2025-05-17 19:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-17 19:00:00'),
+(12, 8,  4, '2025-05-17 20:15:00', 'booked', 8.00, 'cash', 'paid', '2025-05-17 20:15:00'),
+(13, 12, 4, '2025-05-18 09:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-18 09:00:00'),
+(14, 5,  5, '2025-05-17 22:00:00', 'booked', 10.00, 'card', 'paid', '2025-05-17 22:00:00'),
+(15, 7,  5, '2025-05-18 07:30:00', 'booked', 10.00, 'cash', 'paid', '2025-05-18 07:30:00'),
+(16, 5,  6, '2025-05-18 12:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-18 12:00:00'),
+(17, 13, 6, '2025-05-19 09:00:00', 'booked', 8.00, 'cash', 'paid', '2025-05-19 09:00:00'),
+(18, 10, 7, '2025-05-19 18:45:00', 'booked', 10.00, 'card', 'paid', '2025-05-19 18:45:00'),
+(19, 12, 8, '2025-05-20 14:20:00', 'booked', 10.00, 'cash', 'paid', '2025-05-20 14:20:00');
 
 -- End of seed data
 -- Try queries like:

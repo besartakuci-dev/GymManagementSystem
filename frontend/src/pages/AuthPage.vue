@@ -53,7 +53,7 @@ async function handleLogin() {
     const { data } = await login({ email: form.email, password: form.password })
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/home')
+    router.push('/classes')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}
@@ -79,7 +79,7 @@ async function handleRegister() {
     const { data } = await register(payload)
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/home')
+    router.push('/classes')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}

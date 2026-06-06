@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
+import { getClasses } from '@/api/classes'
 
 const route  = useRoute()
 const router = useRouter()
@@ -46,11 +46,14 @@ const fetchClasses = async () => {
   loading.value = true
   error.value = ''
   try {
-    const res = await axios.get('http://localhost:3000/api/classes')
-    classes.value = res.data.data.classes ?? []
-  } catch (err) {
-    console.error('Failed to load classes', err)
-    error.value = 'Could not load classes. Please try again later.'
+    const { data } = await getClasses()
+    classes.value = data.data.classes ?? []
+  } catch (e) {
+    if (e.response?.status === 401) {
+      router.push('/login')
+      return
+    }
+    error.value = e.response?.data?.message || 'Could not load classes.'
   } finally {
     loading.value = false
   }
@@ -114,12 +117,13 @@ onMounted(fetchClasses)
 <style scoped>
 .page {
   background: var(--gym-bg);
+  color: var(--gym-text);
   min-height: calc(100vh - 64px);
+  padding: 3rem 2rem 4rem;
 }
 
 .classes {
-  padding: 4rem 2rem 5rem;
-  max-width: 900px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -132,10 +136,10 @@ onMounted(fetchClasses)
 }
 
 .section-header h1 {
-  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-size: 2rem;
   font-weight: 800;
   color: var(--gym-text);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
   text-transform: capitalize;
 }
 
@@ -157,47 +161,25 @@ onMounted(fetchClasses)
   gap: 1.5rem;
 }
 
-.group-card {
-  background: var(--gym-surface) !important;
-  border: 1px solid var(--gym-border) !important;
-}
-
-.group-card h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--gym-orange);
-  margin: 0;
-}
-
 .session-list {
   list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .session {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--gym-surface-raised);
-  border: 1px solid var(--gym-border);
-  border-radius: 6px;
-  color: var(--gym-text);
-  font-size: 0.95rem;
+  align-items: center;
 }
 
-.session-day     { font-weight: 600; }
-.session-time    { color: var(--gym-orange); }
-.session-trainer { color: var(--gym-text-muted); }
+.session-day      { font-weight: 600; }
+.session-time     { color: var(--gym-orange); }
+.session-trainer  { color: var(--gym-text-muted); }
 .session-separator { color: var(--gym-text-muted); }
 
 @media (max-width: 600px) {
-  .classes { padding: 3rem 1.25rem 4rem; }
   .section-header { flex-direction: column; }
   .session { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
   .session-separator { display: none; }
