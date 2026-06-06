@@ -16,7 +16,6 @@ const year = new Date().getFullYear()
       <div class="col">
         <h4>Navigate</h4>
         <RouterLink to="/home">Home</RouterLink>
-        <RouterLink to="/classes">Classes</RouterLink>
         <RouterLink to="/about">About Us</RouterLink>
       </div>
 
