@@ -63,10 +63,21 @@ const groupedClasses = computed(() => {
     }))
 })
 
+const selectedLabel = computed(() => {
+  const fromLive = classes.value.find((item) => item.ClassTypeName?.toLowerCase() === selectedType.value)?.ClassTypeName
+  if (fromLive) return fromLive
+
+  const fromSample = SAMPLE_CLASS_SCHEDULES[selectedType.value]?.[0]?.ClassTypeName
+  if (fromSample) return fromSample
+
+  return selectedType.value
+    ? selectedType.value.charAt(0).toUpperCase() + selectedType.value.slice(1)
+    : 'All Classes'
+})
+
 const pageTitle = computed(() => {
   if (!selectedType.value) return 'Our Classes'
-  const typeName = classes.value.map((item) => item.ClassTypeName).find((name) => name.toLowerCase() === selectedType.value)
-  return typeName ? `${typeName} Schedule` : 'Class Schedule'
+  return `${selectedLabel.value} Schedule`
 })
 
 const fetchClasses = async () => {
@@ -91,16 +102,19 @@ onMounted(fetchClasses)
   <main class="page">
     <section class="classes">
       <div class="section-header">
+        <p v-if="selectedType" class="selected-pill">Viewing: {{ selectedLabel }}</p>
         <h1>{{ pageTitle }}</h1>
-        <p v-if="selectedType">View the weekly schedule for this class type.</p>
-        <p v-else>Weekly schedule grouped by class type.</p>
       </div>
+
+      <article class="schedule-hero">
+        <span class="eyebrow">Weekly timetable</span>
+        <h2>Find your perfect rhythm and plan the week ahead.</h2>
+        <p>Each session is highlighted with a brighter, more elegant layout so the class lineup feels easier to scan and more inviting to explore.</p>
+      </article>
 
       <p v-if="loading && !hasVisibleSchedule" class="status">Loading classes...</p>
       <p v-else-if="error && !hasVisibleSchedule" class="status error">{{ error }}</p>
       <p v-else-if="!hasVisibleSchedule" class="status">No upcoming classes scheduled for this class type.</p>
-
-      <p v-if="error && hasVisibleSchedule" class="status note">Showing sample schedule while the live class list loads.</p>
 
       <div v-if="hasVisibleSchedule" class="groups">
         <Card v-for="group in groupedClasses" :key="group.name" class="group-card">
@@ -110,11 +124,9 @@ onMounted(fetchClasses)
           <template #content>
             <ul class="session-list">
               <li v-for="session in group.sessions" :key="session.ClassID ?? `${group.name}-${session.dayOfWeek}-${session.startTime}`" class="session">
-                <span class="session-day">{{ session.dayOfWeek }}</span>
-                <span class="session-separator">-</span>
-                <span class="session-time">{{ session.startTime }}</span>
-                <span class="session-separator">-</span>
-                <span class="session-trainer">{{ session.TrainerName }}</span>
+                <span class="session-chip day"><span class="chip-icon">📅</span>{{ session.dayOfWeek }}</span>
+                <span class="session-chip time"><span class="chip-icon">⏰</span>{{ session.startTime }}</span>
+                <span class="session-chip trainer"><span class="chip-icon">🧑‍🏫</span>{{ session.TrainerName }}</span>
               </li>
             </ul>
           </template>
@@ -127,25 +139,78 @@ onMounted(fetchClasses)
 
 <style scoped>
 .page {
-  background: var(--gym-bg);
+  background:
+    radial-gradient(circle at top, rgba(249, 115, 22, 0.08), transparent 28%),
+    linear-gradient(180deg, #060606 0%, var(--gym-bg) 45%, #080808 100%);
   min-height: calc(100vh - 64px);
 }
 
 .classes {
   padding: 4rem 2rem 5rem;
-  max-width: 900px;
+  max-width: 1180px;
   margin: 0 auto;
+  text-align: center;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
 }
 
-.section-header {
+.schedule-hero {
   text-align: center;
-  margin-bottom: 2.5rem;
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  border-radius: 24px;
+  padding: 1.1rem 1.15rem 1.2rem;
+  margin: 0 auto 1.6rem;
+  max-width: 920px;
+  background:
+    linear-gradient(135deg, rgba(17, 17, 17, 0.98), rgba(10, 10, 10, 0.98));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--gym-orange-subtle);
+  color: #fdba74;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.schedule-hero h2 {
+  margin-top: 0.75rem;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  color: var(--gym-text);
+}
+
+.schedule-hero p {
+  margin-top: 0.35rem;
+  color: var(--gym-text-muted);
+  line-height: 1.5;
 }
 
 .section-header h1 {
   font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 800;
   color: var(--gym-text);
+  margin-bottom: 0.5rem;
+}
+
+.selected-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.12);
+  color: #fdba74;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
   margin-bottom: 0.5rem;
 }
 
@@ -164,14 +229,31 @@ onMounted(fetchClasses)
 }
 
 .groups {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  gap: 1.2rem;
+  justify-items: center;
 }
 
 .group-card {
-  background: var(--gym-surface) !important;
-  border: 1px solid var(--gym-border) !important;
+  width: 100%;
+  max-width: 920px;
+}
+
+.group-card {
+  background:
+    linear-gradient(145deg, rgba(17, 17, 17, 0.98), rgba(10, 10, 10, 0.98)) !important;
+  border: 1px solid rgba(249, 115, 22, 0.18) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.30);
+  overflow: hidden;
+}
+
+.group-card :deep(.p-card-body) {
+  padding: 1.05rem 1.05rem 1.1rem;
+}
+
+.group-card :deep(.p-card-content) {
+  padding-top: 0.25rem;
 }
 
 .group-card h2 {
@@ -188,35 +270,56 @@ onMounted(fetchClasses)
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  align-items: stretch;
 }
 
 .session {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.55rem;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--gym-surface-raised);
-  border: 1px solid var(--gym-border);
-  border-radius: 6px;
+  padding: 0.8rem 0.9rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(249, 115, 22, 0.05));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--gym-orange);
+  border-radius: 16px;
   color: var(--gym-text);
   font-size: 0.95rem;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
 }
 
-.session-day {
+.session:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.35);
+  box-shadow: 0 12px 24px rgba(249, 115, 22, 0.08);
+}
+
+.session-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--gym-text);
   font-weight: 600;
+  width: fit-content;
 }
 
-.session-time {
-  color: var(--gym-orange);
+.session-chip.time {
+  color: #fdba74;
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.22);
 }
 
-.session-trainer {
-  color: var(--gym-text-muted);
+.session-chip.trainer {
+  color: #d4d4d8;
 }
 
-.session-separator {
-  color: var(--gym-text-muted);
+.chip-icon {
+  font-size: 0.9rem;
 }
 
 @media (max-width: 600px) {
@@ -225,9 +328,9 @@ onMounted(fetchClasses)
   }
 
   .session {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: flex-start;
-    gap: 0.25rem;
+    gap: 0.35rem;
   }
 
   .session-separator {
