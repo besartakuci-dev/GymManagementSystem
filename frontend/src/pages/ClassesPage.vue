@@ -76,11 +76,14 @@ const form = reactive({
   trainerId: '',
 })
 
-const role = computed<Role | 'public'>(() => auth.user?.Role || 'public')
+const role = computed<Role | 'public'>(() => {
+  const value = String(auth.user?.Role || '').toLowerCase()
+  return value === 'admin' || value === 'trainer' || value === 'member' ? value : 'public'
+})
 const isAdmin = computed(() => role.value === 'admin')
 const isTrainer = computed(() => role.value === 'trainer')
 const isMember = computed(() => role.value === 'member')
-const canManage = computed(() => isAdmin.value || isTrainer.value)
+const canManageClasses = computed(() => isAdmin.value || isTrainer.value)
 const isEditing = computed(() => editingId.value !== null)
 
 const stats = computed(() => ({
@@ -157,6 +160,7 @@ function resetForm() {
 }
 
 function editClass(gymClass: GymClass) {
+  if (!canManageClass(gymClass)) return
   editingId.value = gymClass.id
   form.name = gymClass.name
   form.category = gymClass.category
@@ -170,6 +174,7 @@ function editClass(gymClass: GymClass) {
 }
 
 function canManageClass(gymClass: GymClass) {
+  if (!canManageClasses.value) return false
   if (isAdmin.value) return true
   return isTrainer.value && gymClass.TrainerUserID === auth.user?.UserID
 }
@@ -217,6 +222,10 @@ async function saveClass() {
   error.value = ''
   notice.value = ''
   setServerErrors(undefined)
+  if (!canManageClasses.value) {
+    error.value = 'Unauthorized'
+    return
+  }
   if (!validateForm()) return
 
   saving.value = true
@@ -239,6 +248,7 @@ async function saveClass() {
 }
 
 function openCancelModal(gymClass: GymClass, asDelete = false) {
+  if (!canManageClass(gymClass)) return
   cancelTarget.value = gymClass
   deleteMode.value = asDelete
 }
@@ -250,6 +260,11 @@ function closeCancelModal() {
 
 async function confirmCancel() {
   if (!cancelTarget.value) return
+  if (!canManageClass(cancelTarget.value)) {
+    error.value = 'Unauthorized'
+    closeCancelModal()
+    return
+  }
   error.value = ''
   notice.value = ''
   try {
@@ -299,12 +314,12 @@ onMounted(async () => {
     <section class="page-head">
       <div>
         <p class="eyebrow">Classes</p>
-        <h1>{{ canManage ? 'Class Management' : 'Browse Classes' }}</h1>
+        <h1>{{ canManageClasses ? 'Class Management' : 'Browse Classes' }}</h1>
       </div>
-      <button v-if="canManage && isEditing" class="ghost" type="button" @click="resetForm">New Class</button>
+      <button v-if="canManageClasses && isEditing" class="ghost" type="button" @click="resetForm">New Class</button>
     </section>
 
-    <section v-if="canManage" class="stats-grid">
+    <section v-if="canManageClasses" class="stats-grid">
       <div class="stat-card">
         <span>Total</span>
         <strong>{{ stats.total }}</strong>
@@ -323,7 +338,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="canManage" class="manager-grid">
+    <section v-if="canManageClasses" class="manager-grid">
       <form class="panel" @submit.prevent="saveClass">
         <div class="panel-head">
           <p class="eyebrow">{{ isEditing ? 'Edit' : 'Create' }}</p>
@@ -405,7 +420,7 @@ onMounted(async () => {
       <article v-for="gymClass in classes" :key="gymClass.id" class="class-card">
         <div class="card-top">
           <span class="pill">{{ gymClass.category }}</span>
-          <span v-if="canManage" class="pill">{{ gymClass.status }}</span>
+          <span v-if="canManageClasses" class="pill">{{ gymClass.status }}</span>
         </div>
 
         <h3>{{ gymClass.name }}</h3>

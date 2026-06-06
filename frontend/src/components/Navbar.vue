@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
+const userRole = computed(() => String(auth.user?.Role || '').toLowerCase())
 
 function handleLogout() {
   auth.logout()
@@ -22,17 +24,17 @@ function handleLogout() {
       <RouterLink to="/about">About Us</RouterLink>
 
       <!-- Member -->
-      <template v-if="auth.user?.Role === 'member'">
+      <template v-if="userRole === 'member'">
         <RouterLink to="/bookings">My Bookings</RouterLink>
       </template>
 
       <!-- Trainer -->
-      <template v-if="auth.user?.Role === 'trainer'">
+      <template v-if="userRole === 'trainer'">
         <RouterLink to="/trainer/classes">My Classes</RouterLink>
       </template>
 
       <!-- Admin -->
-      <template v-if="auth.user?.Role === 'admin'">
+      <template v-if="userRole === 'admin'">
         <RouterLink to="/admin">Admin</RouterLink>
       </template>
     </div>
