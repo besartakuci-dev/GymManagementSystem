@@ -11,6 +11,7 @@ import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
 import AdminPage        from '@/pages/admin/AdminPage.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
+import AdminDashboardPage from '@/pages/AdminDashboardPage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -62,6 +63,7 @@ const router = createRouter({
       component: MembersPage,
       meta: { requiresAuth: true, roles: ['admin'] },
     },
+    { path: '/admin-dashboard', component: AdminDashboardPage },
   ],
 })
 
