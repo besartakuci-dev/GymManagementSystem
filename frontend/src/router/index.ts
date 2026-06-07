@@ -7,6 +7,7 @@ import ClassesPage      from '@/pages/ClassesPage.vue'
 import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
+import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
 import AdminPage        from '@/pages/admin/AdminPage.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
@@ -24,11 +25,7 @@ const router = createRouter({
     // Public
     { path: '/',             redirect: '/home' },
     { path: '/home',         component: HomePage },
-    {
-      path: '/classes',
-      component: ClassesPage,
-      meta: { requiresAuth: true, roles: ['member', 'trainer', 'admin'] },
-    },
+    { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
     { path: '/unauthorized', component: UnauthorizedPage },
@@ -50,7 +47,7 @@ const router = createRouter({
     // Trainer + Admin
     {
       path: '/trainer/classes',
-      component: ClassesPage,
+      component: MyClassesPage,
       meta: { requiresAuth: true, roles: ['trainer', 'admin'] },
     },
 
@@ -63,11 +60,6 @@ const router = createRouter({
     {
       path: '/admin/members',
       component: MembersPage,
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/classes',
-      component: ClassesPage,
       meta: { requiresAuth: true, roles: ['admin'] },
     },
   ],
@@ -83,8 +75,7 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.user) return '/login'
 
   if (to.meta.roles && auth.user) {
-    const role = String(auth.user.Role || '').toLowerCase()
-    if (!to.meta.roles.includes(role)) return '/unauthorized'
+    if (!to.meta.roles.includes(auth.user.Role)) return '/unauthorized'
   }
 })
 

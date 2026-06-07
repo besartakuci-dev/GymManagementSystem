@@ -20,7 +20,6 @@ function handleLogout() {
 
     <div class="links">
       <RouterLink to="/home">Home</RouterLink>
-      <RouterLink to="/classes">Classes</RouterLink>
       <RouterLink to="/about">About Us</RouterLink>
 
       <!-- Member -->
