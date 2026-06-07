@@ -12,10 +12,12 @@ export interface ClassPayload {
 }
 
 export const getClasses = () => api.get('/classes')
+export const getMyBookedClasses = () => api.get('/classes/my/bookings')
 export const getClassById = (id: number) => api.get(`/classes/${id}`)
 export const getClassesByTrainer = (trainerId: number) => api.get(`/classes/trainer/${trainerId}`)
 export const createClass = (payload: ClassPayload) => api.post('/classes', payload)
 export const updateClass = (id: number, payload: ClassPayload) => api.put(`/classes/${id}`, payload)
 export const cancelClass = (id: number) => api.put(`/classes/${id}/cancel`)
 export const deleteClass = (id: number) => api.delete(`/classes/${id}`)
-export const bookClass = (id: number) => api.post(`/classes/${id}/join`, { paymentMethod: 'card' })
+export const bookClass = (id: number, paymentMethod: 'cash' | 'card' | 'bank_transfer') =>
+  api.post(`/classes/${id}/join`, { paymentMethod })

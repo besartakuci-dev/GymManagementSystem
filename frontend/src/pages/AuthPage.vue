@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import coverImage from '@/assets/Login_Register_Cover.png'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
@@ -11,6 +11,7 @@ import { register, login } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 const view = ref<'login' | 'register'>('login')
@@ -53,7 +54,7 @@ async function handleLogin() {
     const { data } = await login({ email: form.email, password: form.password })
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/classes')
+    router.push(String(route.query.redirect || '/classes'))
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}
@@ -79,7 +80,7 @@ async function handleRegister() {
     const { data } = await register(payload)
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/classes')
+    router.push(String(route.query.redirect || '/classes'))
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}

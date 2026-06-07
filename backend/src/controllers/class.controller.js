@@ -1,9 +1,11 @@
 import {
   cancelClass,
   createClass,
+  deleteClass,
   getClassesDashboard,
   getClassBookings,
   getClass,
+  getMyBookings,
   joinClass,
   listClasses,
   listTrainerClasses,
@@ -36,7 +38,8 @@ function timePart(value) {
 
 function withSchedule(gymClass) {
   if (!gymClass) return gymClass;
-  const status = gymClass.Status === 'scheduled' ? 'Active' : gymClass.Status === 'cancelled' ? 'Cancelled' : 'Completed';
+  const rawStatus = gymClass.Status ?? gymClass.ClassStatus;
+  const status = rawStatus === 'scheduled' ? 'Active' : rawStatus === 'cancelled' ? 'Cancelled' : 'Completed';
 
   return {
     ...gymClass,
@@ -49,10 +52,12 @@ function withSchedule(gymClass) {
     endTime: gymClass.endTime ?? timePart(gymClass.EndDateTime),
     room: gymClass.Room,
     maxCapacity: gymClass.MaxCapacity,
+    price: Number(gymClass.Price ?? 0),
     bookedCount: Number(gymClass.BookedCount ?? 0),
     spotsLeft: Number(gymClass.SpotsLeft ?? 0),
     trainerId: gymClass.TrainerID,
     trainerName: gymClass.TrainerName,
+    Status: rawStatus,
     status,
   };
 }
@@ -79,6 +84,11 @@ export const listClassesController = asyncHandler(async (req, res) => {
   });
 });
 
+export const myBookingsController = asyncHandler(async (req, res) => {
+  const bookings = await getMyBookings(req.user);
+  sendSuccess(res, { bookings: bookings.map(withSchedule) });
+});
+
 export const getClassController = asyncHandler(async (req, res) => {
   const gymClass = await getClass(req.validated.params.id);
   sendSuccess(res, { class: withSchedule(gymClass) });
@@ -102,6 +112,11 @@ export const updateClassController = asyncHandler(async (req, res) => {
 export const cancelClassController = asyncHandler(async (req, res) => {
   const gymClass = await cancelClass(req.user, req.validated.params.id);
   sendSuccess(res, { class: withSchedule(gymClass) }, 'Class cancelled successfully');
+});
+
+export const deleteClassController = asyncHandler(async (req, res) => {
+  const gymClass = await deleteClass(req.user, req.validated.params.id);
+  sendSuccess(res, { class: withSchedule(gymClass) }, 'Class deleted successfully');
 });
 
 export const joinClassController = asyncHandler(async (req, res) => {

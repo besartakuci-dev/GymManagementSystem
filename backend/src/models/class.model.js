@@ -164,6 +164,15 @@ export async function updateStatus(classId, status) {
   return result.affectedRows;
 }
 
+export async function remove(classId) {
+  const [result] = await pool.execute(
+    `DELETE FROM Classes WHERE ClassID = ?`,
+    [classId]
+  );
+
+  return result.affectedRows;
+}
+
 export async function findBookingByUserAndClass(userId, classId) {
   const [rows] = await pool.execute(
     `SELECT BookingID, UserID, ClassID, Status
@@ -175,11 +184,11 @@ export async function findBookingByUserAndClass(userId, classId) {
   return rows[0] ?? null;
 }
 
-export async function createBooking({ userId, classId, amount, paymentMethod }) {
+export async function createBooking({ userId, classId, amount, paymentMethod, paymentStatus, paidAt }) {
   const [result] = await pool.execute(
     `INSERT INTO Bookings (UserID, ClassID, Status, Amount, PaymentMethod, PaymentStatus, PaidAt)
-     VALUES (?, ?, 'booked', ?, ?, 'paid', NOW())`,
-    [userId, classId, amount, paymentMethod]
+     VALUES (?, ?, 'booked', ?, ?, ?, ?)`,
+    [userId, classId, amount, paymentMethod, paymentStatus, paidAt]
   );
   return result.insertId;
 }
@@ -193,6 +202,40 @@ export async function findBookingById(bookingId) {
     [bookingId]
   );
   return rows[0] ?? null;
+}
+
+export async function findBookingsByUser(userId) {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      b.BookingID,
+      b.UserID,
+      b.ClassID,
+      b.BookingDate,
+      b.Status AS BookingStatus,
+      b.Amount,
+      b.PaymentMethod,
+      b.PaymentStatus,
+      b.PaidAt,
+      c.Name,
+      ct.TypeName AS ClassTypeName,
+      ct.TypeName AS Category,
+      c.StartDateTime,
+      c.EndDateTime,
+      c.Room,
+      c.Status AS ClassStatus,
+      CONCAT(u.FirstName, ' ', u.LastName) AS TrainerName
+    FROM Bookings b
+    JOIN Classes c ON c.ClassID = b.ClassID
+    JOIN Class_Types ct ON ct.ClassTypeID = c.ClassTypeID
+    JOIN Trainers t ON t.TrainerID = c.TrainerID
+    JOIN Users u ON u.UserID = t.UserID
+    WHERE b.UserID = ?
+    ORDER BY c.StartDateTime ASC
+    `,
+    [userId]
+  );
+  return rows;
 }
 
 export async function findClassTypes() {

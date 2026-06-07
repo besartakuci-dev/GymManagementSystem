@@ -9,11 +9,13 @@ import {
   findBookedClassIdsByUser,
   findBookingById,
   findBookingByUserAndClass,
+  findBookingsByUser,
   findById,
   findByTrainer,
   findClassTypeByName,
   findClassTypes,
   findTrainerByUserId,
+  remove,
   trainerExists,
   update,
   updateStatus,
@@ -77,6 +79,14 @@ export async function getClassesDashboard() {
 
 export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
+}
+
+export async function getMyBookings(user) {
+  if (user.role !== 'member') {
+    throw new ApiError(403, 'Only members can view their bookings', 'FORBIDDEN');
+  }
+
+  return findBookingsByUser(user.userId);
 }
 
 function assertValidClassTimes(startDateTime, endDateTime) {
@@ -224,6 +234,13 @@ export async function cancelClass(user, classId) {
   return findById(classId);
 }
 
+export async function deleteClass(user, classId) {
+  const existing = await requireClass(classId);
+  assertCanManage(user, existing);
+  await remove(classId);
+  return existing;
+}
+
 export async function joinClass(user, classId, payload) {
   const existing = await requireClass(classId);
 
@@ -244,11 +261,14 @@ export async function joinClass(user, classId, payload) {
     throw new ApiError(409, 'You have already joined this class', 'CLASS_ALREADY_JOINED');
   }
 
+  const paymentStatus = payload.paymentMethod === 'cash' ? 'pending' : 'paid';
   const bookingId = await createBooking({
     userId: user.userId,
     classId,
     amount: existing.Price,
     paymentMethod: payload.paymentMethod,
+    paymentStatus,
+    paidAt: paymentStatus === 'paid' ? new Date() : null,
   });
   const [booking, gymClass] = await Promise.all([findBookingById(bookingId), findById(classId)]);
   return { booking, class: gymClass };

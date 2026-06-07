@@ -24,7 +24,7 @@ function handleLogout() {
 
       <!-- Member -->
       <template v-if="userRole === 'member'">
-        <RouterLink to="/bookings">My Bookings</RouterLink>
+        <RouterLink to="/bookings">My Classes</RouterLink>
       </template>
 
       <!-- Trainer -->

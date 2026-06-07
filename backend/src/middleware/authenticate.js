@@ -16,3 +16,17 @@ export function authenticate(req, res, next) {
     next(new ApiError(401, 'Invalid or expired token', 'INVALID_TOKEN'));
   }
 }
+
+export function optionalAuthenticate(req, _res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return next();
+
+  const token = authHeader.slice(7);
+  try {
+    const payload = verifyToken(token);
+    req.user = { userId: payload.sub, role: payload.role, email: payload.email };
+  } catch {
+    req.user = undefined;
+  }
+  next();
+}

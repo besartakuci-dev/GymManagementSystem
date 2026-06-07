@@ -62,6 +62,11 @@ const router = createRouter({
       component: MembersPage,
       meta: { requiresAuth: true, roles: ['admin'] },
     },
+    {
+      path: '/admin/classes',
+      component: MyClassesPage,
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
   ],
 })
 
@@ -75,7 +80,8 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !auth.user) return '/login'
 
   if (to.meta.roles && auth.user) {
-    if (!to.meta.roles.includes(auth.user.Role)) return '/unauthorized'
+    const role = String(auth.user.Role || '').toLowerCase()
+    if (!to.meta.roles.includes(role)) return '/unauthorized'
   }
 })
 
