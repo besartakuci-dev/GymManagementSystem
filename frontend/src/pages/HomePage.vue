@@ -5,7 +5,7 @@ import Button from 'primevue/button'
 import Card from 'primevue/card'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
-import { getPlans, buyMembership } from '@/api/memberships'
+import { getPlans, subscribe } from '@/api/plans'
 import fitnesImg   from '@/assets/fitnes.png'
 import pilatesImg  from '@/assets/pilates.png'
 import yogaImg     from '@/assets/yoga.png'
@@ -34,7 +34,7 @@ async function buyPlan(plan: any) {
   if (!auth.user || auth.hasMembership) return
   buyingPlanId.value = plan.PlanID
   try {
-    await buyMembership(plan.PlanID)
+    await subscribe(plan.PlanID)
     await auth.refreshMembership()
     toast.add({
       severity: 'success',
@@ -149,7 +149,7 @@ const classes = [
           <template #content>
             <h3>{{ plan.PlanName }}</h3>
             <div class="price">
-              <span class="amount">€{{ Number(plan.Price).toFixed(0) }}</span>
+              <span class="amount">€{{ Number(plan.Price).toFixed(2) }}</span>
               <span class="period">/ {{ plan.DurationMonths }} {{ plan.DurationMonths === 1 ? 'month' : 'months' }}</span>
             </div>
             <p class="plan-desc">{{ plan.Description }}</p>

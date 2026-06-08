@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import HomePage         from '@/pages/HomePage.vue'
 import AuthPage         from '@/pages/AuthPage.vue'
 import ClassesPage      from '@/pages/ClassesPage.vue'
+import PlansPage        from '@/pages/PlansPage.vue'
 import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
@@ -38,6 +39,11 @@ const router = createRouter({
     },
 
     // Member + Admin
+    {
+      path: '/plans',
+      component: PlansPage,
+      meta: { requiresAuth: true, roles: ['member', 'admin'] },
+    },
     {
       path: '/bookings',
       component: BookingsPage,

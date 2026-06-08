@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import Toast from 'primevue/toast'
+import ConfirmDialog from 'primevue/confirmdialog'
 import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -15,4 +16,5 @@ onMounted(auth.init)
   <RouterView />
   <Footer />
   <Toast />
+  <ConfirmDialog />
 </template>

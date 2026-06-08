@@ -1,9 +1,15 @@
 # CLAUDE.md — Gym Management System (GymCore)
 
+> **Last updated: 2026-06-08**
+>
 > Guidance for working in this repository. This file documents how the project is
 > structured, how to run it, and the known issues a new developer will hit.
 > It was produced by reading the actual source — where docs and code disagreed,
 > the **code** is treated as the source of truth and the disagreement is flagged.
+>
+> Reflects the work done on 2026-06-08: memberships + class joining, the admin
+> dashboard wiring + fixes, the "My Bookings" page/endpoint, the PrimeVue dark-mode
+> fix, and the "BBros Gym" → "GymCore" rebrand.
 
 ---
 
@@ -439,6 +445,10 @@ All paths are prefixed with `/api`. "Auth" = requires `Authorization: Bearer <to
 | DELETE | `/classes/:id` | yes | admin/trainer | **Soft-cancel, not a real delete** (alias of cancel). |
 | POST | `/classes/:id/join` | yes | member | Book the member into a class. |
 | GET | `/classes/my-bookings` | yes | member | The logged-in member's own bookings (joined with class + type + time + trainer). |
+| GET | `/plans` | no | — | List all membership plans (`PlanID, PlanName, DurationMonths, Price, IncludesClasses, Description`), ordered by `Price`. |
+| POST | `/memberships` | yes | member/admin | **Mock checkout (always succeeds — no gateway, no card validation).** Body `{ planId, paymentMethod? }` (`paymentMethod` defaults to `card`; **no card fields are accepted**). Records a `paid`/`active` membership (`StartDate`=today, `EndDate`=today+`DurationMonths`, `Amount`=plan price, `PaidAt`=now) and returns the created row incl. `PlanName`. |
+| GET | `/memberships/me` | yes | any | The current user's memberships (most recent first), joined with plan name, as `{ memberships, active }` where `active` is the single in-force membership (or `null`). |
+| PUT | `/memberships/:id/cancel` | yes | member/admin | **Soft-cancel** a membership (`Status`→`cancelled`; row kept, no refund). 404 if not found; **403 if a non-admin tries to cancel a membership they don't own**; 409 `MEMBERSHIP_NOT_ACTIVE` if it isn't currently `active`. Returns the updated membership. |
 | GET | `/admin/dashboard` | yes | admin | Counts (members, memberships, classes, bookings). |
 | GET | `/admin/class-bookings` | yes | admin | Per-class booking stats. |
 
