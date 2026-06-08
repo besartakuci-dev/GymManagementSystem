@@ -8,3 +8,9 @@ export const purchaseMembershipSchema = z.object({
     paymentMethod: paymentMethodSchema.default('card'),
   }),
 });
+
+export const membershipIdSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive('Invalid membership id'),
+  }),
+});

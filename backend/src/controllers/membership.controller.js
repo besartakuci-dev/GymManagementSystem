@@ -1,4 +1,5 @@
 import {
+  cancelMembership,
   getMyMembership,
   listPlans,
   purchaseMembership,
@@ -12,11 +13,16 @@ export const listPlansController = asyncHandler(async (req, res) => {
 });
 
 export const myMembershipController = asyncHandler(async (req, res) => {
-  const membership = await getMyMembership(req.user.userId);
-  sendSuccess(res, { membership });
+  const { memberships, active } = await getMyMembership(req.user.userId);
+  sendSuccess(res, { memberships, active });
 });
 
 export const purchaseMembershipController = asyncHandler(async (req, res) => {
   const membership = await purchaseMembership(req.user.userId, req.validated.body);
   sendSuccess(res, { membership }, 'Membership activated', 201);
+});
+
+export const cancelMembershipController = asyncHandler(async (req, res) => {
+  const membership = await cancelMembership(req.user, req.validated.params.id);
+  sendSuccess(res, { membership }, 'Membership cancelled');
 });
