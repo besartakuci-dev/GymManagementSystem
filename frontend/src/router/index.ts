@@ -26,7 +26,7 @@ const router = createRouter({
     // Public
     { path: '/',             redirect: '/home' },
     { path: '/home',         component: HomePage },
-    { path: '/classes',      component: ClassesPage },
+    { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
     { path: '/unauthorized', component: UnauthorizedPage },

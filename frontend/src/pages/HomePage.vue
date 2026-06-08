@@ -20,6 +20,7 @@ const classes = [
   {
     image: fitnesImg,
     title: 'Fitness',
+    slug: 'fitness',
     level: 'All levels',
     duration: '60 min',
     desc: 'Full-body strength and conditioning sessions designed to build muscle, burn fat, and boost overall performance.',
@@ -27,6 +28,7 @@ const classes = [
   {
     image: pilatesImg,
     title: 'Pilates',
+    slug: 'pilates',
     level: 'Beginner – Intermediate',
     duration: '50 min',
     desc: 'Low-impact core-focused training that improves posture, flexibility, and body awareness.',
@@ -34,6 +36,7 @@ const classes = [
   {
     image: yogaImg,
     title: 'Yoga',
+    slug: 'yoga',
     level: 'All levels',
     duration: '60 min',
     desc: 'Breathwork, balance, and mindful movement to increase flexibility and reduce stress.',
@@ -41,6 +44,7 @@ const classes = [
   {
     image: crossfitImg,
     title: 'CrossFit',
+    slug: 'crossfit',
     level: 'Intermediate – Advanced',
     duration: '45 min',
     desc: 'High-intensity functional movements combining weightlifting, cardio, and gymnastics.',
@@ -83,21 +87,23 @@ const classes = [
         <p>Find the right class for your goals and fitness level.</p>
       </div>
       <div class="classes-grid">
-        <Card v-for="c in classes" :key="c.title" class="class-card">
-          <template #header>
-            <img :src="c.image" :alt="c.title" class="class-img" />
-          </template>
-          <template #content>
-            <div class="card-body">
-              <h3>{{ c.title }}</h3>
-              <div class="meta">
-                <span><i class="pi pi-bolt" /> {{ c.level }}</span>
-                <span><i class="pi pi-clock" /> {{ c.duration }}</span>
+        <RouterLink v-for="c in classes" :key="c.title" :to="`/classes/${c.slug}`" class="class-link">
+          <Card class="class-card">
+            <template #header>
+              <img :src="c.image" :alt="c.title" class="class-img" />
+            </template>
+            <template #content>
+              <div class="card-body">
+                <h3>{{ c.title }}</h3>
+                <div class="meta">
+                  <span><i class="pi pi-bolt" /> {{ c.level }}</span>
+                  <span><i class="pi pi-clock" /> {{ c.duration }}</span>
+                </div>
+                <p>{{ c.desc }}</p>
               </div>
-              <p>{{ c.desc }}</p>
-            </div>
-          </template>
-        </Card>
+            </template>
+          </Card>
+        </RouterLink>
       </div>
     </section>
 
@@ -208,10 +214,21 @@ main {
   gap: 1.5rem;
 }
 
+.class-link {
+  text-decoration: none;
+  color: inherit;
+}
+
 .class-card {
   background: var(--gym-surface) !important;
   border: 1px solid var(--gym-border) !important;
   overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.class-link:hover .class-card {
+  transform: translateY(-2px);
+  border-color: var(--gym-orange) !important;
 }
 
 .class-img {
