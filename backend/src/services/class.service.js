@@ -9,6 +9,7 @@ import {
   findBookedClassIdsByUser,
   findBookingById,
   findBookingByUserAndClass,
+  findBookingWithClassById,
   findBookingsByUser,
   findById,
   findByTrainer,
@@ -18,6 +19,7 @@ import {
   remove,
   trainerExists,
   update,
+  updateBooking,
   updateStatus,
 } from '../models/class.model.js';
 
@@ -81,12 +83,43 @@ export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
 }
 
+export async function getManagedClassBookings(user, classId) {
+  const existing = await requireClass(classId);
+  assertCanManage(user, existing);
+  return getBookingsByClassId(classId);
+}
+
 export async function getMyBookings(user) {
   if (user.role !== 'member') {
     throw new ApiError(403, 'Only members can view their bookings', 'FORBIDDEN');
   }
 
   return findBookingsByUser(user.userId);
+}
+
+export async function cancelMyBooking(user, bookingId) {
+  if (user.role !== 'member') {
+    throw new ApiError(403, 'Only members can cancel their bookings', 'FORBIDDEN');
+  }
+
+  const booking = await findBookingWithClassById(bookingId);
+  if (!booking) throw new ApiError(404, 'Booking not found', 'BOOKING_NOT_FOUND');
+  if (booking.UserID !== user.userId) {
+    throw new ApiError(403, 'You can only cancel your own bookings', 'FORBIDDEN');
+  }
+  if (booking.Status === 'cancelled') {
+    throw new ApiError(400, 'Booking is already cancelled', 'BOOKING_ALREADY_CANCELLED');
+  }
+  if (new Date(booking.StartDateTime) < new Date()) {
+    throw new ApiError(400, 'Past class bookings cannot be cancelled', 'CLASS_ALREADY_STARTED');
+  }
+
+  await updateBooking(bookingId, {
+    status: 'cancelled',
+    paymentStatus: booking.PaymentStatus === 'paid' ? 'refunded' : booking.PaymentStatus,
+  });
+
+  return findBookingById(bookingId);
 }
 
 function assertValidClassTimes(startDateTime, endDateTime) {

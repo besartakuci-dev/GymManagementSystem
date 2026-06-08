@@ -5,6 +5,7 @@ import {
   cancelClass as cancelClassApi,
   createClass,
   deleteClass,
+  getClassBookings,
   getClasses,
   updateClass,
   type ClassPayload,
@@ -47,6 +48,19 @@ interface ClassType {
   TypeName: ClassPayload['category']
 }
 
+interface Attendee {
+  BookingID: number
+  UserID: number
+  FirstName: string
+  LastName: string
+  Email: string
+  BookingDate: string
+  Status: string
+  Amount: string | number
+  PaymentMethod: 'cash' | 'card' | 'bank_transfer'
+  PaymentStatus: 'pending' | 'paid' | 'refunded'
+}
+
 const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const auth = useAuthStore()
@@ -57,6 +71,7 @@ const trainers = ref<Trainer[]>([])
 const classTypes = ref<ClassType[]>([])
 const loading = ref(false)
 const saving = ref(false)
+const attendeesLoading = ref(false)
 const error = ref('')
 const notice = ref('')
 const editingId = ref<number | null>(null)
@@ -64,6 +79,8 @@ const cancelTarget = ref<GymClass | null>(null)
 const deleteMode = ref(false)
 const selectedCategory = ref('')
 const openMenuId = ref<number | null>(null)
+const attendeesClass = ref<GymClass | null>(null)
+const attendees = ref<Attendee[]>([])
 const formErrors = reactive<Record<string, string>>({})
 
 const form = reactive({
@@ -240,6 +257,35 @@ function formatDate(value: string) {
     month: 'short',
     day: 'numeric',
   }).format(new Date(`${value}T00:00:00`))
+}
+
+function paymentMethodLabel(value: string) {
+  if (value === 'bank_transfer') return 'Bank transfer'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+async function openAttendeesModal(gymClass: GymClass) {
+  if (!canManageClass(gymClass)) return
+  openMenuId.value = null
+  attendeesClass.value = gymClass
+  attendees.value = []
+  attendeesLoading.value = true
+  error.value = ''
+
+  try {
+    const { data } = await getClassBookings(gymClass.id)
+    attendees.value = data.data.bookings ?? []
+  } catch (e: any) {
+    error.value = e.response?.data?.message || 'Could not load class members.'
+    attendeesClass.value = null
+  } finally {
+    attendeesLoading.value = false
+  }
+}
+
+function closeAttendeesModal() {
+  attendeesClass.value = null
+  attendees.value = []
 }
 
 async function loadClasses() {
@@ -496,6 +542,10 @@ onMounted(async () => {
                   <i class="pi pi-pencil" />
                   Edit
                 </button>
+                <button type="button" @click="openAttendeesModal(session)">
+                  <i class="pi pi-users" />
+                  View Members
+                </button>
                 <button type="button" :disabled="session.Status === 'cancelled'" @click="openCancelModal(session)">
                   <i class="pi pi-ban" />
                   Cancel
@@ -520,6 +570,34 @@ onMounted(async () => {
             <button class="ghost" type="button" @click="closeCancelModal">No, keep it</button>
             <button class="danger" type="button" @click="confirmCancel">{{ deleteMode ? 'Yes, delete' : 'Yes, cancel' }}</button>
           </div>
+        </div>
+      </div>
+
+      <div v-if="attendeesClass" class="modal-backdrop" role="presentation">
+        <div class="modal attendees-modal" role="dialog" aria-modal="true" aria-labelledby="attendees-title">
+          <div class="modal-head">
+            <div>
+              <p class="eyebrow">Members</p>
+              <h2 id="attendees-title">{{ attendeesClass.name }}</h2>
+              <p>{{ attendeesClass.dayOfWeek || formatDate(attendeesClass.date) }} at {{ attendeesClass.startTime }}</p>
+            </div>
+            <button class="ghost close-button" type="button" @click="closeAttendeesModal">Close</button>
+          </div>
+
+          <p v-if="attendeesLoading" class="status">Loading members...</p>
+          <p v-else-if="attendees.length === 0" class="status">No members have booked this class yet.</p>
+
+          <ul v-else class="attendee-list">
+            <li v-for="attendee in attendees" :key="attendee.BookingID" class="attendee-row">
+              <div>
+                <strong>{{ attendee.FirstName }} {{ attendee.LastName }}</strong>
+                <span>{{ attendee.Email }}</span>
+              </div>
+              <span class="attendee-pill">{{ attendee.Status }}</span>
+              <span class="attendee-pill" :class="attendee.PaymentStatus">{{ attendee.PaymentStatus }}</span>
+              <span class="attendee-pill">{{ paymentMethodLabel(attendee.PaymentMethod) }}</span>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
@@ -915,8 +993,88 @@ button:disabled {
   padding: 1.25rem;
 }
 
+.attendees-modal {
+  max-width: 760px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-head p:last-child {
+  color: var(--gym-text-muted);
+  margin: 0.35rem 0 0;
+}
+
+.close-button {
+  min-height: 36px;
+}
+
 .modal p {
   color: var(--gym-text-muted);
+}
+
+.attendee-list {
+  display: grid;
+  gap: 0.7rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.attendee-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) repeat(3, auto);
+  gap: 0.65rem;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--gym-orange);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.8rem;
+}
+
+.attendee-row strong,
+.attendee-row span {
+  display: block;
+}
+
+.attendee-row strong {
+  color: var(--gym-text);
+}
+
+.attendee-row div span {
+  color: var(--gym-text-muted);
+  font-size: 0.86rem;
+  margin-top: 0.2rem;
+}
+
+.attendee-pill {
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--gym-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.35rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.attendee-pill.paid {
+  color: #8ff0b4;
+}
+
+.attendee-pill.pending {
+  color: #ffd18a;
+}
+
+.attendee-pill.refunded {
+  color: #c8c8c8;
 }
 
 .modal-actions {
@@ -942,10 +1100,16 @@ button:disabled {
 
   .panel-head,
   .table-header,
+  .modal-head,
   .split,
   .actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .attendee-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
   }
 }
 </style>

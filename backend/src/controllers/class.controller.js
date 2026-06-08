@@ -1,9 +1,10 @@
 import {
   cancelClass,
+  cancelMyBooking,
   createClass,
   deleteClass,
   getClassesDashboard,
-  getClassBookings,
+  getManagedClassBookings,
   getClass,
   getMyBookings,
   joinClass,
@@ -69,9 +70,9 @@ export const dashboardController = asyncHandler(async (req, res) => {
 });
 
 export const classBookingsController = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+  const { id } = req.validated.params;
 
-  const bookings = await getClassBookings(id);
+  const bookings = await getManagedClassBookings(req.user, id);
 
   sendSuccess(res, { bookings });
 });
@@ -87,6 +88,11 @@ export const listClassesController = asyncHandler(async (req, res) => {
 export const myBookingsController = asyncHandler(async (req, res) => {
   const bookings = await getMyBookings(req.user);
   sendSuccess(res, { bookings: bookings.map(withSchedule) });
+});
+
+export const cancelMyBookingController = asyncHandler(async (req, res) => {
+  const booking = await cancelMyBooking(req.user, req.validated.params.bookingId);
+  sendSuccess(res, { booking }, 'Booking cancelled successfully');
 });
 
 export const getClassController = asyncHandler(async (req, res) => {

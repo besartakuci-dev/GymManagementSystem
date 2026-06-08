@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { getMyBookedClasses } from '@/api/classes'
+import { cancelMyBooking, getMyBookedClasses } from '@/api/classes'
 
 interface BookedClass {
   BookingID: number
@@ -25,14 +25,21 @@ interface BookedClass {
 const router = useRouter()
 const bookings = ref<BookedClass[]>([])
 const loading = ref(true)
+const cancelling = ref(false)
 const error = ref('')
+const notice = ref('')
+const cancelTarget = ref<BookedClass | null>(null)
 
 const upcomingBookings = computed(() =>
-  bookings.value.filter((booking) => new Date(`${booking.date}T${booking.startTime}:00`) >= new Date())
+  bookings.value.filter((booking) => booking.BookingStatus !== 'cancelled' && new Date(`${booking.date}T${booking.startTime}:00`) >= new Date())
 )
 
 const pastBookings = computed(() =>
-  bookings.value.filter((booking) => new Date(`${booking.date}T${booking.startTime}:00`) < new Date())
+  bookings.value.filter((booking) => booking.BookingStatus !== 'cancelled' && new Date(`${booking.date}T${booking.startTime}:00`) < new Date())
+)
+
+const cancelledBookings = computed(() =>
+  bookings.value.filter((booking) => booking.BookingStatus === 'cancelled')
 )
 
 function paymentMethodLabel(value: string) {
@@ -51,6 +58,42 @@ function formatDate(value: string) {
     month: 'short',
     day: 'numeric',
   }).format(new Date(`${value}T00:00:00`))
+}
+
+function canCancel(booking: BookedClass) {
+  return booking.BookingStatus === 'booked' && new Date(`${booking.date}T${booking.startTime}:00`) >= new Date()
+}
+
+function openCancelModal(booking: BookedClass) {
+  if (!canCancel(booking)) return
+  cancelTarget.value = booking
+  error.value = ''
+  notice.value = ''
+}
+
+function closeCancelModal() {
+  cancelTarget.value = null
+}
+
+async function confirmCancelBooking() {
+  if (!cancelTarget.value) return
+  cancelling.value = true
+  error.value = ''
+  notice.value = ''
+
+  try {
+    await cancelMyBooking(cancelTarget.value.BookingID)
+    notice.value =
+      cancelTarget.value.PaymentStatus === 'paid'
+        ? 'Booking cancelled and payment marked as refunded.'
+        : 'Booking cancelled.'
+    closeCancelModal()
+    await loadBookings()
+  } catch (e: any) {
+    error.value = e.response?.data?.message || 'Could not cancel this booking.'
+  } finally {
+    cancelling.value = false
+  }
 }
 
 async function loadBookings() {
@@ -88,6 +131,7 @@ onMounted(loadBookings)
 
       <p v-if="loading" class="status">Loading your classes...</p>
       <p v-else-if="error" class="status error">{{ error }}</p>
+      <p v-if="notice" class="status success">{{ notice }}</p>
 
       <template v-else>
         <p v-if="bookings.length === 0" class="empty">
@@ -133,6 +177,10 @@ onMounted(loadBookings)
                   <dd>{{ Number(booking.Amount).toFixed(2) }}</dd>
                 </div>
               </dl>
+
+              <button v-if="canCancel(booking)" class="danger-button" type="button" @click="openCancelModal(booking)">
+                Cancel Booking
+              </button>
             </article>
           </div>
         </section>
@@ -154,7 +202,41 @@ onMounted(loadBookings)
             </article>
           </div>
         </section>
+
+        <section v-if="cancelledBookings.length" class="booking-section">
+          <div class="section-title">
+            <p class="eyebrow">Cancelled</p>
+            <h2>Cancelled Classes</h2>
+          </div>
+
+          <div class="booking-grid">
+            <article v-for="booking in cancelledBookings" :key="booking.BookingID" class="booking-card muted">
+              <div class="card-top">
+                <span class="pill">{{ booking.category }}</span>
+                <span class="pill" :class="booking.PaymentStatus">{{ paymentStatusLabel(booking.PaymentStatus) }}</span>
+              </div>
+              <h3>{{ booking.name }}</h3>
+              <p class="trainer">{{ formatDate(booking.date) }} at {{ booking.startTime }}</p>
+            </article>
+          </div>
+        </section>
       </template>
+
+      <div v-if="cancelTarget" class="modal-backdrop" role="presentation">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cancel-booking-title">
+          <h2 id="cancel-booking-title">Cancel Booking</h2>
+          <p>
+            Cancel your booking for {{ cancelTarget.name }} on {{ formatDate(cancelTarget.date) }}?
+            Paid bookings will be marked as refunded.
+          </p>
+          <div class="modal-actions">
+            <button class="ghost-button" type="button" @click="closeCancelModal">Keep Booking</button>
+            <button class="danger-button" type="button" :disabled="cancelling" @click="confirmCancelBooking">
+              {{ cancelling ? 'Cancelling...' : 'Cancel Booking' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 </template>
@@ -232,6 +314,10 @@ dt {
 
 .status.error {
   color: #ff8b8b;
+}
+
+.status.success {
+  color: #8ff0b4;
 }
 
 .empty a {
@@ -313,6 +399,64 @@ dd {
   text-align: right;
 }
 
+.danger-button,
+.ghost-button {
+  min-height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 900;
+  padding: 0 0.9rem;
+  text-transform: uppercase;
+}
+
+.danger-button {
+  border: 1px solid rgba(255, 64, 64, 0.45);
+  background: rgba(255, 64, 64, 0.12);
+  color: #ff6969;
+  margin-top: 1rem;
+}
+
+.ghost-button {
+  border: 1px solid var(--gym-border);
+  background: transparent;
+  color: var(--gym-text);
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 1rem;
+}
+
+.modal {
+  width: min(440px, 100%);
+  border: 1px solid rgba(249, 115, 22, 0.22);
+  border-radius: 8px;
+  background: #111;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+  padding: 1.25rem;
+}
+
+.modal p {
+  color: var(--gym-text-muted);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
 @media (max-width: 720px) {
   .page-head {
     align-items: stretch;
@@ -327,6 +471,10 @@ dd {
 
   dd {
     text-align: left;
+  }
+
+  .modal-actions {
+    flex-direction: column;
   }
 }
 </style>

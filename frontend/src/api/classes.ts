@@ -13,7 +13,9 @@ export interface ClassPayload {
 
 export const getClasses = () => api.get('/classes')
 export const getMyBookedClasses = () => api.get('/classes/my/bookings')
+export const cancelMyBooking = (bookingId: number) => api.put(`/classes/my/bookings/${bookingId}/cancel`)
 export const getClassById = (id: number) => api.get(`/classes/${id}`)
+export const getClassBookings = (id: number) => api.get(`/classes/${id}/bookings`)
 export const getClassesByTrainer = (trainerId: number) => api.get(`/classes/trainer/${trainerId}`)
 export const createClass = (payload: ClassPayload) => api.post('/classes', payload)
 export const updateClass = (id: number, payload: ClassPayload) => api.put(`/classes/${id}`, payload)

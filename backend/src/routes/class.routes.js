@@ -3,6 +3,7 @@ import {
   dashboardController,
   classBookingsController,
   cancelClassController,
+  cancelMyBookingController,
   createClassController,
   deleteClassController,
   getClassController,
@@ -17,6 +18,7 @@ import { authenticate, optionalAuthenticate } from '../middleware/authenticate.j
 import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import {
+  bookingIdSchema,
   classIdSchema,
   createClassSchema,
   joinClassSchema,
@@ -28,7 +30,20 @@ const router = Router();
 
 router.get('/dashboard', dashboardController);
 router.get('/my/bookings', authenticate, authorize('member'), myBookingsController);
-router.get('/:id/bookings', classBookingsController);
+router.put(
+  '/my/bookings/:bookingId/cancel',
+  authenticate,
+  authorize('member'),
+  validate(bookingIdSchema),
+  cancelMyBookingController
+);
+router.get(
+  '/:id/bookings',
+  authenticate,
+  authorize('admin', 'trainer'),
+  validate(classIdSchema),
+  classBookingsController
+);
 
 router.get('/', optionalAuthenticate, listClassesController);
 router.get(

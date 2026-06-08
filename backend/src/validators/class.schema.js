@@ -77,6 +77,10 @@ export const classIdSchema = z.object({
   params: z.object({ id: idParam }),
 });
 
+export const bookingIdSchema = z.object({
+  params: z.object({ bookingId: idParam }),
+});
+
 export const trainerClassSchema = z.object({
   params: z.object({ trainerId: idParam }),
 });

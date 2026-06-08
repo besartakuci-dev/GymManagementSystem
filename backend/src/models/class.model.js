@@ -31,7 +31,11 @@ export async function getBookingsByClassId(classId) {
       u.LastName,
       u.Email,
       b.BookingDate,
-      b.Status
+      b.Status,
+      b.Amount,
+      b.PaymentMethod,
+      b.PaymentStatus,
+      b.PaidAt
     FROM Bookings b
     JOIN Users u ON b.UserID = u.UserID
     WHERE b.ClassID = ?
@@ -202,6 +206,51 @@ export async function findBookingById(bookingId) {
     [bookingId]
   );
   return rows[0] ?? null;
+}
+
+export async function findBookingWithClassById(bookingId) {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      b.BookingID,
+      b.UserID,
+      b.ClassID,
+      b.BookingDate,
+      b.Status,
+      b.Amount,
+      b.PaymentMethod,
+      b.PaymentStatus,
+      b.PaidAt,
+      c.StartDateTime,
+      c.Status AS ClassStatus
+    FROM Bookings b
+    JOIN Classes c ON c.ClassID = b.ClassID
+    WHERE b.BookingID = ?
+    LIMIT 1
+    `,
+    [bookingId]
+  );
+  return rows[0] ?? null;
+}
+
+export async function updateBooking(bookingId, fields) {
+  const columnMap = {
+    status: 'Status',
+    paymentStatus: 'PaymentStatus',
+    paidAt: 'PaidAt',
+  };
+
+  const entries = Object.entries(fields).filter(([, value]) => value !== undefined);
+  const assignments = entries.map(([key]) => `${columnMap[key]} = ?`);
+  const values = entries.map(([, value]) => value);
+
+  if (!assignments.length) return 0;
+
+  const [result] = await pool.execute(
+    `UPDATE Bookings SET ${assignments.join(', ')} WHERE BookingID = ?`,
+    [...values, bookingId]
+  );
+  return result.affectedRows;
 }
 
 export async function findBookingsByUser(userId) {
