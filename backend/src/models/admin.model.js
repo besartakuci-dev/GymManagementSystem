@@ -37,7 +37,7 @@ export async function getClassBookingsStats() {
   const [rows] = await pool.execute(`
     SELECT
       c.ClassID,
-      c.ClassName,
+      c.Name AS ClassName,
       c.StartDateTime,
       c.EndDateTime,
       c.MaxCapacity,
@@ -48,7 +48,7 @@ export async function getClassBookingsStats() {
     LEFT JOIN Bookings b ON c.ClassID = b.ClassID
     GROUP BY
       c.ClassID,
-      c.ClassName,
+      c.Name,
       c.StartDateTime,
       c.EndDateTime,
       c.MaxCapacity,

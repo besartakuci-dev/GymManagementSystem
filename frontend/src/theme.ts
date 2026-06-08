@@ -18,19 +18,22 @@ const GymPreset = definePreset(Aura, {
     },
     colorScheme: {
       dark: {
+        // Aura dark mode uses surface.0 as the lightest shade (text color) and the
+        // high indices (800/900/950) as component backgrounds. Keep this scale
+        // monotonic light -> dark, or PrimeVue surfaces render light-on-light.
         surface: {
           0:   '#ffffff',
-          50:  '#000000',
-          100: '#0a0a0a',
-          200: '#111111',
-          300: '#2a2a2a',
-          400: '#404040',
+          50:  '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
           500: '#737373',
-          600: '#a3a3a3',
-          700: '#d4d4d4',
-          800: '#e5e5e5',
-          900: '#f5f5f5',
-          950: '#fafafa',
+          600: '#404040',
+          700: '#2a2a2a',
+          800: '#111111',
+          900: '#0a0a0a',
+          950: '#000000',
         },
         highlight: {
           background:      'rgba(249, 115, 22, 0.15)',

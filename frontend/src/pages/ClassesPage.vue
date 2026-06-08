@@ -1,13 +1,20 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
 import Card from 'primevue/card'
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
+import api from '@/api/axios'
+import { bookClass } from '@/api/classes'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
+const toast = useToast()
 const classes = ref([])
 const loading = ref(true)
 const error = ref('')
+const joiningId = ref(null)
 
 const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -85,7 +92,7 @@ const fetchClasses = async () => {
   error.value = ''
 
   try {
-    const res = await axios.get('http://localhost:3000/api/classes')
+    const res = await api.get('/classes')
     classes.value = res.data.data.classes ?? []
   } catch (err) {
     console.error('Failed to load classes', err)
@@ -95,7 +102,63 @@ const fetchClasses = async () => {
   }
 }
 
-onMounted(fetchClasses)
+function classIdOf(session) {
+  return session.ClassID ?? session.id ?? null
+}
+
+function spotsLeftOf(session) {
+  return Number(session.spotsLeft ?? session.SpotsLeft ?? 0)
+}
+
+function isBooked(session) {
+  return !!session.IsBookedByCurrentUser
+}
+
+function joinDisabled(session) {
+  if (isBooked(session)) return true
+  if (!auth.user || auth.user.Role !== 'member') return true
+  if (!auth.hasMembership) return true
+  if (!classIdOf(session)) return true
+  if (session.status !== 'Active') return true
+  if (spotsLeftOf(session) <= 0) return true
+  return false
+}
+
+function joinLabel(session) {
+  if (isBooked(session)) return 'Joined'
+  if (!auth.user) return 'Sign in to join'
+  if (auth.user.Role !== 'member') return 'Members only'
+  if (!auth.hasMembership) return 'Membership required'
+  if (!classIdOf(session)) return 'Unavailable'
+  if (session.status !== 'Active') return 'Unavailable'
+  if (spotsLeftOf(session) <= 0) return 'Full'
+  return 'Join'
+}
+
+async function onJoin(session) {
+  const id = classIdOf(session)
+  if (!id) return
+  joiningId.value = id
+  try {
+    await bookClass(id)
+    toast.add({ severity: 'success', summary: 'Class booked', detail: 'See you there!', life: 3500 })
+    await fetchClasses()
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not join',
+      detail: e.response?.data?.message ?? 'Something went wrong',
+      life: 4000,
+    })
+  } finally {
+    joiningId.value = null
+  }
+}
+
+onMounted(async () => {
+  await fetchClasses()
+  if (auth.user) auth.refreshMembership()
+})
 </script>
 
 <template>
@@ -127,6 +190,15 @@ onMounted(fetchClasses)
                 <span class="session-chip day"><span class="chip-icon">📅</span>{{ session.dayOfWeek }}</span>
                 <span class="session-chip time"><span class="chip-icon">⏰</span>{{ session.startTime }}</span>
                 <span class="session-chip trainer"><span class="chip-icon">🧑‍🏫</span>{{ session.TrainerName }}</span>
+                <div class="session-join">
+                  <Button
+                    :label="joinLabel(session)"
+                    :disabled="joinDisabled(session)"
+                    :loading="joiningId !== null && classIdOf(session) === joiningId"
+                    size="small"
+                    @click="onJoin(session)"
+                  />
+                </div>
               </li>
             </ul>
           </template>
@@ -316,6 +388,12 @@ onMounted(fetchClasses)
 
 .session-chip.trainer {
   color: #d4d4d8;
+}
+
+.session-join {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .chip-icon {

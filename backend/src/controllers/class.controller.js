@@ -6,6 +6,7 @@ import {
   getClass,
   joinClass,
   listClasses,
+  listMyBookings,
   listTrainerClasses,
   updateClass,
 } from '../services/class.service.js';
@@ -68,6 +69,11 @@ export const classBookingsController = asyncHandler(async (req, res) => {
 
   const bookings = await getClassBookings(id);
 
+  sendSuccess(res, { bookings });
+});
+
+export const myBookingsController = asyncHandler(async (req, res) => {
+  const bookings = await listMyBookings(req.user);
   sendSuccess(res, { bookings });
 });
 

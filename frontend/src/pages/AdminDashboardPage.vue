@@ -1,7 +1,5 @@
 <template>
   <section class="admin-dashboard">
-    <Toast />
-
     <div class="hero">
       <p class="eyebrow">Admin Area</p>
       <h1>Admin Dashboard</h1>
@@ -128,7 +126,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
