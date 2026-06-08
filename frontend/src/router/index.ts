@@ -8,7 +8,7 @@ import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
 import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
-import AdminPage        from '@/pages/admin/AdminPage.vue'
+import AdminDashboardPage from '@/pages/AdminDashboardPage.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
 
@@ -54,7 +54,7 @@ const router = createRouter({
     // Admin only
     {
       path: '/admin',
-      component: AdminPage,
+      component: AdminDashboardPage,
       meta: { requiresAuth: true, roles: ['admin'] },
     },
     {
