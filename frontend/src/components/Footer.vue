@@ -9,14 +9,13 @@ const year = new Date().getFullYear()
     <div class="footer-inner">
 
       <div class="col brand-col">
-        <span class="brand">BBros Gym</span>
+        <span class="brand">GymCore</span>
         <p>Train harder. Live stronger.<br />Kosovo's premier fitness destination.</p>
       </div>
 
       <div class="col">
         <h4>Navigate</h4>
         <RouterLink to="/home">Home</RouterLink>
-        <RouterLink to="/classes">Classes</RouterLink>
         <RouterLink to="/about">About Us</RouterLink>
       </div>
 
@@ -30,7 +29,7 @@ const year = new Date().getFullYear()
     </div>
 
     <div class="footer-bottom">
-      <span>© {{ year }} BBros Gym. All rights reserved.</span>
+      <span>© {{ year }} GymCore. All rights reserved.</span>
     </div>
   </footer>
 </template>

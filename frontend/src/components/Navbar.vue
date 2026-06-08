@@ -22,11 +22,10 @@ function initials() {
 
 <template>
   <nav class="navbar">
-    <RouterLink to="/home" class="brand">BBros Gym</RouterLink>
+    <RouterLink to="/home" class="brand">GymCore</RouterLink>
 
     <div class="links">
       <RouterLink to="/home">Home</RouterLink>
-      <RouterLink to="/classes">Classes</RouterLink>
       <RouterLink to="/about">About Us</RouterLink>
 
       <template v-if="userRole === 'member'">

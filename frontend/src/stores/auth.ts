@@ -1,10 +1,27 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getMe } from '@/api/auth'
+import { getMyMembership } from '@/api/memberships'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
+  const membership = ref<any>(null)
   const initialized = ref(false)
+
+  const hasMembership = computed(() => !!membership.value)
+
+  async function refreshMembership() {
+    if (!user.value) {
+      membership.value = null
+      return
+    }
+    try {
+      const { data } = await getMyMembership()
+      membership.value = data.data.membership
+    } catch {
+      membership.value = null
+    }
+  }
 
   async function init() {
     if (initialized.value) return
@@ -14,6 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await getMe()
       user.value = data.data.user
+      await refreshMembership()
     } catch {
       localStorage.removeItem('token')
     }
@@ -27,8 +45,8 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     localStorage.removeItem('token')
     user.value = null
-    initialized.value = false
+    membership.value = null
   }
 
-  return { user, initialized, init, setUser, logout }
+  return { user, membership, hasMembership, initialized, init, refreshMembership, setUser, logout }
 })

@@ -8,7 +8,7 @@ import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
 import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
-import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
+import UnauthorizedPage  from '@/pages/UnauthorizedPage.vue'
 import AdminLayout      from '@/layouts/AdminLayout.vue'
 import AdminDashboard   from '@/pages/admin/AdminDashboard.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
@@ -27,11 +27,7 @@ const router = createRouter({
     // Public
     { path: '/',             redirect: '/home' },
     { path: '/home',         component: HomePage },
-    {
-      path: '/classes',
-      component: ClassesPage,
-      meta: { requiresAuth: true, roles: ['member', 'trainer', 'admin'] },
-    },
+    { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
     { path: '/unauthorized', component: UnauthorizedPage },

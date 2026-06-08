@@ -12,8 +12,8 @@ const router = Router();
 
 router.use(authenticate, authorize('admin'));
 
-router.get('/dashboard', dashboardController);
-router.get('/class-bookings', classBookingsController);
+router.get('/dashboard', authenticate, authorize('admin'), dashboardController);
+router.get('/class-bookings', authenticate, authorize('admin'), classBookingsController);
 router.get('/users', getUsersController);
 router.post('/users', createUserController);
 

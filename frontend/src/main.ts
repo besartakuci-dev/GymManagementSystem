@@ -7,6 +7,7 @@ import './styles/base.css'
 import GymPreset from './theme'
 import App from './App.vue'
 import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
 
 const app = createApp(App)
 
@@ -18,5 +19,6 @@ app.use(PrimeVue, {
   },
 })
 app.use(ToastService)
+app.use(ConfirmationService)
 app.use(router)
 app.mount('#app')

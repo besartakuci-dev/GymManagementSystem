@@ -8,6 +8,7 @@ import {
   joinClassController,
   listClassesController,
   listTrainerClassesController,
+  myBookingsController,
   updateClassController,
 } from '../controllers/class.controller.js';
 
@@ -25,6 +26,7 @@ import {
 const router = Router();
 
 router.get('/dashboard', dashboardController);
+router.get('/my-bookings', authenticate, authorize('member'), myBookingsController);
 router.get('/:id/bookings', classBookingsController);
 
 router.get('/', listClassesController);

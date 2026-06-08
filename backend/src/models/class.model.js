@@ -20,6 +20,41 @@ export async function getDashboardClasses() {
   return rows;
 }
 
+export async function findBookingsByUser(userId) {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      b.BookingID,
+      b.ClassID,
+      b.Status        AS BookingStatus,
+      b.BookingDate,
+      b.Amount,
+      b.PaymentMethod,
+      b.PaymentStatus,
+      c.Name          AS ClassName,
+      ct.TypeName     AS ClassTypeName,
+      ct.Category     AS Category,
+      c.Room,
+      c.Status        AS ClassStatus,
+      DATE_FORMAT(c.StartDateTime, '%Y-%m-%d') AS date,
+      DAYNAME(c.StartDateTime)                 AS dayOfWeek,
+      DATE_FORMAT(c.StartDateTime, '%H:%i')    AS startTime,
+      DATE_FORMAT(c.EndDateTime,   '%H:%i')    AS endTime,
+      CONCAT(tu.FirstName, ' ', tu.LastName)   AS TrainerName
+    FROM Bookings b
+    JOIN Classes c      ON c.ClassID = b.ClassID
+    JOIN Class_Types ct ON ct.ClassTypeID = c.ClassTypeID
+    JOIN Trainers t     ON t.TrainerID = c.TrainerID
+    JOIN Users tu       ON tu.UserID = t.UserID
+    WHERE b.UserID = ?
+    ORDER BY c.StartDateTime ASC
+    `,
+    [userId]
+  );
+
+  return rows;
+}
+
 export async function getBookingsByClassId(classId) {
   const [rows] = await pool.execute(
     `
