@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getMe } from '@/api/auth'
-import { getMyMembership } from '@/api/memberships'
+import { getMyMemberships } from '@/api/plans'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
@@ -17,8 +17,9 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
     try {
-      const { data } = await getMyMembership()
-      membership.value = data.data.membership
+      const { data } = await getMyMemberships()
+      // GET /memberships/me returns { memberships, active }; `active` is the in-force one (or null).
+      membership.value = data.data.active ?? null
     } catch {
       membership.value = null
     }

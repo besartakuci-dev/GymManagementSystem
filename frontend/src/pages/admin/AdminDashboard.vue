@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import { getDashboard, getClassBookings, getUsers} from '@/api/admin'
-import { getClasses, createClass, cancelClass } from '@/api/classes'
+import { getClasses, createClass, deleteClass } from '@/api/classes'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
@@ -16,6 +17,7 @@ const router = useRouter()
 const toast = useToast()
 const auth = useAuthStore()
 const isAdmin = computed(() => String(auth.user?.Role ?? '').toLowerCase() === 'admin')
+const confirm = useConfirm()
 
 const stats = ref<any>(null)
 const users = ref<any[]>([])
@@ -25,6 +27,9 @@ const trainers = ref<any[]>([])
 const classTypes = ref<any[]>([])
 const loading = ref(true)
 const savingSchedule = ref(false)
+
+// Remove hard-deletes the row; this also hides any stray 'cancelled' classes from older data.
+const visibleSchedules = computed(() => schedules.value.filter((s: any) => s.status !== 'Cancelled'))
 
 const statCards = [
   { key: 'totalMembers',      label: 'Total Members',      icon: 'pi pi-users' },
@@ -67,7 +72,7 @@ async function loadAll() {
     classBookings.value = bookingsRes.data.data.classBookings ?? []
     schedules.value     = classesRes.data.data.classes ?? []
     trainers.value      = classesRes.data.data.trainers ?? []
-    classTypes.value    = typesRes.data.data ?? []
+    classTypes.value    = typesRes.data.data.classTypes ?? []
     if (!scheduleForm.value.category && classTypes.value.length) {
       scheduleForm.value.category = classTypes.value[0].TypeName
     }
@@ -87,7 +92,7 @@ async function addSchedule() {
   try {
     await createClass({
       name:        scheduleForm.value.name,
-      category:    scheduleForm.value.category,
+      category:    scheduleForm.value.category as 'Yoga' | 'Pilates',
       date:        scheduleForm.value.date,
       startTime:   scheduleForm.value.startTime,
       endTime:     scheduleForm.value.endTime,
@@ -105,14 +110,23 @@ async function addSchedule() {
   }
 }
 
-async function removeSchedule(classId: number) {
-  try {
-    await cancelClass(classId)
-    toast.add({ severity: 'success', summary: 'Removed', detail: 'Class schedule cancelled.', life: 3000 })
-    await loadAll()
-  } catch (e: any) {
-    toast.add({ severity: 'error', summary: 'Could not remove', detail: e?.response?.data?.message || 'Unable to remove schedule.', life: 4000 })
-  }
+function removeSchedule(item: any) {
+  confirm.require({
+    header: 'Delete this class?',
+    message: `"${item.name}" will be permanently deleted, along with its bookings. This cannot be undone.`,
+    icon: 'pi pi-exclamation-triangle',
+    acceptProps: { label: 'Delete', severity: 'danger' },
+    rejectProps: { label: 'Cancel', severity: 'secondary', outlined: true },
+    accept: async () => {
+      try {
+        await deleteClass(item.id)
+        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Class permanently deleted.', life: 3000 })
+        await loadAll()
+      } catch (e: any) {
+        toast.add({ severity: 'error', summary: 'Could not delete', detail: e?.response?.data?.message || 'Unable to delete schedule.', life: 4000 })
+      }
+    },
+  })
 }
 
 function roleSeverity(role: string) {
@@ -203,14 +217,14 @@ onMounted(loadAll)
       <!-- Existing schedules card -->
       <div class="card">
         <p class="card-label">Existing Schedules</p>
-        <div v-if="schedules.length" class="schedule-list">
-          <article v-for="item in schedules" :key="item.id" class="schedule-item">
+        <div v-if="visibleSchedules.length" class="schedule-list">
+          <article v-for="item in visibleSchedules" :key="item.id" class="schedule-item">
             <div>
               <p class="schedule-title">{{ item.name }}</p>
               <p class="schedule-meta">{{ item.category }} • {{ item.date }} • {{ item.startTime }}–{{ item.endTime }}</p>
               <p class="schedule-meta">Room {{ item.room }} • Capacity {{ item.maxCapacity }} • {{ item.trainerName || 'Trainer not set' }}</p>
             </div>
-            <Button label="Remove" icon="pi pi-trash" severity="danger" size="small" @click="removeSchedule(item.id)" />
+            <Button label="Remove" icon="pi pi-trash" severity="danger" size="small" @click="removeSchedule(item)" />
           </article>
         </div>
         <p v-else-if="!loading" class="empty">No schedules yet.</p>

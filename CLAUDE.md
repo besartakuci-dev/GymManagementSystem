@@ -1,15 +1,16 @@
 # CLAUDE.md — Gym Management System (GymCore)
 
-> **Last updated: 2026-06-08**
+> **Last updated: 2026-06-09**
 >
 > Guidance for working in this repository. This file documents how the project is
 > structured, how to run it, and the known issues a new developer will hit.
 > It was produced by reading the actual source — where docs and code disagreed,
 > the **code** is treated as the source of truth and the disagreement is flagged.
 >
-> Reflects the work done on 2026-06-08: memberships + class joining, the admin
-> dashboard wiring + fixes, the "My Bookings" page/endpoint, the PrimeVue dark-mode
-> fix, and the "BBros Gym" → "GymCore" rebrand.
+> Reflects the work done on 2026-06-08–09: memberships + class joining, the
+> membership-plan **purchase** (cosmetic/mock checkout) and **cancellation** flow
+> (PrimeVue ConfirmDialog), the admin dashboard wiring + fixes, the "My Bookings"
+> page/endpoint, the PrimeVue dark-mode fix, and the "BBros Gym" → "GymCore" rebrand.
 
 ---
 
@@ -31,9 +32,12 @@ accidental install (see Issues). The real code is only in `backend/` and `fronte
 themselves and book classes; trainers run classes; admins manage everything.
 
 **What actually works today:** the backend API for auth + classes + class-types +
-admin stats is implemented. The frontend can register, log in, and show the public
-class schedule. Several frontend pages (bookings, admin/trainer dashboards) are
-**placeholders or not wired up yet** — see Issues §11.
+admin stats + admin user management + membership plans/purchase/cancel is implemented.
+The frontend can register, log in, show the public class schedule, join classes, view
+"My Bookings", **purchase** a membership (via the cosmetic mock checkout on the **Home**
+page) and **cancel** it from the **Profile** page. The admin area lives under `/admin`
+(a sidebar layout with dashboard, members list, and create-user). The standalone
+**Plans** page and the **trainer dashboard** are built but **not routed** — see Issues §11.
 
 ---
 
@@ -55,7 +59,10 @@ class schedule. Several frontend pages (bookings, admin/trainer dashboards) are
 | HTTP client | axios | `frontend/src/api/axios.ts` |
 
 **No third-party external services.** There is no payment gateway, email/SMS, OAuth,
-or cloud SDK. "Payment method" is just a stored field. Everything runs locally.
+or cloud SDK. The membership checkout is **cosmetic/simulated** — the card fields on the
+Plans page are never sent to the backend; only the plan id and a `paymentMethod` label are
+stored, and the membership is recorded as `paid` immediately. "Payment method" is just a
+stored field. Everything runs locally.
 
 ---
 
@@ -75,7 +82,8 @@ HTTP request
 ```
 
 - **Every API route is mounted under `/api`** (`app.js:15`). Sub-routers:
-  `/api/auth`, `/api/class-types`, `/api/classes`, `/api/admin`.
+  `/api/auth`, `/api/class-types`, `/api/classes`, `/api/admin`, `/api/plans`,
+  `/api/memberships`.
 - **Standard response envelope** (`utils/response.js`, `middleware/errorHandler.js`):
   - Success: `{ "success": true, "message": "...", "data": {...} }`
   - Error: `{ "success": false, "error": "<CODE>", "message": "...", "details"?: {...} }`
@@ -90,7 +98,7 @@ HTTP request
 ### Frontend flow
 
 ```
-main.ts (registers Pinia, PrimeVue+theme, ToastService, Router) → App.vue
+main.ts (registers Pinia, PrimeVue+theme, ToastService, ConfirmationService, Router) → App.vue
   → router/index.ts  (routes + global beforeEach guard for auth/roles)
   → pages/*.vue      (call api/*.ts)
   → api/axios.ts     (axios instance, baseURL http://localhost:3000/api,
@@ -102,7 +110,8 @@ main.ts (registers Pinia, PrimeVue+theme, ToastService, Router) → App.vue
   `localStorage` under the key `token`**; the user object is held in memory only.
 - `router/index.ts` has a global guard: unauthenticated users hitting a
   `requiresAuth` route are sent to `/login`; wrong-role users are sent to
-  `/unauthorized`. Role is matched on the PascalCase `Role` field.
+  `/unauthorized`. The user's `Role` is lower-cased before being matched against the
+  route's `roles`.
 
 ### Frontend ↔ backend contract
 
@@ -124,7 +133,6 @@ GymManagementSystem/                  ← THE PROJECT ROOT (git repo lives here)
 ├── CLAUDE.md                         ← this file
 ├── package.json / package-lock.json  ← STRAY accidental install — ignore (see Issues)
 ├── node_modules/                     ← stray, accidentally committed — ignore
-├── 01_gym_schema_simple.sql          ← STALE old schema copy — NOT used (see Issues)
 │
 ├── backend/                          ← the API
 │   ├── .env                          ← real config (⚠ committed to git — see Issues)
@@ -143,12 +151,12 @@ GymManagementSystem/                  ← THE PROJECT ROOT (git repo lives here)
 │       ├── server.js                 ← ENTRY POINT (starts the HTTP listener)
 │       ├── app.js                    ← Express app: middleware + routes
 │       ├── config/  env.js (loads/validates .env) · db.js (mysql2 pool)
-│       ├── routes/  index.js + auth/class/classType/admin .routes.js
+│       ├── routes/  index.js + auth/class/classType/admin/plans/membership .routes.js
 │       ├── controllers/  one per domain (read req → call service → respond)
 │       ├── services/     business logic per domain
-│       ├── models/       raw SQL (user, class, admin)
+│       ├── models/       raw SQL (user, class, admin, membership)
 │       ├── middleware/   authenticate, authorize, validate, errorHandler
-│       ├── validators/   Zod schemas (auth, class, classType)
+│       ├── validators/   Zod schemas (auth, class, classType, membership)
 │       └── utils/        ApiError, asyncHandler, jwt, response
 │
 └── frontend/                         ← the Vue app
@@ -163,11 +171,15 @@ GymManagementSystem/                  ← THE PROJECT ROOT (git repo lives here)
         ├── theme.ts                  ← PrimeVue custom theme preset
         ├── router/index.ts           ← routes + auth/role guard
         ├── stores/auth.ts            ← Pinia auth store (token + user) ← source of truth
-        ├── composables/useAuth.ts    ← DEAD duplicate of the store (unused)
-        ├── api/  axios.ts · auth.ts · classes.ts · admin.ts
+        ├── composables/  useAuth.ts (DEAD duplicate of the store, unused) ·
+        │                  useCancelMembership.ts (cancel-membership confirm flow)
+        ├── api/  axios.ts · auth.ts · classes.ts · admin.ts · plans.ts (plans + memberships)
+        ├── layouts/AdminLayout.vue   ← sidebar shell that wraps the /admin pages
         ├── pages/  Home, Auth, Classes, About, Profile, Bookings, Unauthorized,
-        │           admin/(AdminPage, MembersPage), trainer/(MyClassesPage),
-        │           AdminDashboardPage.vue + TrainerDashboardPage.vue ← built but NOT routed
+        │           admin/(AdminDashboard → /admin, MembersPage → /admin/members,
+        │                  CreateUserPage → /admin/users/create, AdminPage ← orphaned),
+        │           trainer/(MyClassesPage ← orphaned; /trainer/classes uses ClassesPage),
+        │           PlansPage · AdminDashboardPage · TrainerDashboardPage ← built but NOT routed
         ├── components/  Navbar.vue, Footer.vue
         ├── assets/      images
         └── styles/      base.css, variables.css
@@ -224,7 +236,7 @@ What this does (`backend/scripts/db-setup.js`):
 2. Runs `db/01_gym_schema_simple.sql`, which **`DROP DATABASE IF EXISTS gym_db`**,
    then recreates it and all tables.
 3. Runs `db/02_gym_seed_data_simple.sql` to insert demo data (14 users, 3 trainers,
-   4 plans, 2 class types, 9 classes, bookings).
+   4 plans, 2 class types, 9 classes, 11 memberships, 19 bookings).
 
 > ⚠ **`db:setup` is fully destructive every time it runs** — it drops the entire
 > `gym_db` database with no confirmation and no backup. Re-run it only when you are
@@ -373,24 +385,32 @@ debugging, or deploying.
   especially `GET /api/classes/:id/bookings` (which returns booked members' **names +
   emails**) have **no `authenticate`/`authorize`** middleware. → Gate them to
   admin/trainer. *(The two `/api/admin/*` endpoints are now admin-gated.)*
+- **`GET /api/classes` has no auth, so the member-only filter never runs.** The route has
+  no `authenticate` middleware, so `req.user` is `undefined`; the service's "members see only
+  upcoming + active classes" filter (`findAll({ upcomingOnly, activeOnly })`, keyed on
+  `req.user.role === 'member'`) is therefore skipped for everyone. → Members see **all**
+  classes, including past / cancelled / completed ones (the UI renders those as
+  "Unavailable"). Gate the route, or apply the filter unconditionally in the query.
 - **Login and register return different user shapes.** `login` omits
   `Phone/DateOfBirth/JoinDate/CreatedAt`, so right after login `ProfilePage.vue` shows
   "Invalid Date" for *Member Since* until a full page reload calls `/auth/me`. → Make
   login re-fetch via `findById`, or add those columns to `findByEmail`.
 
 ### Frontend wiring gaps (features that look present but aren't connected)
-- **`TrainerDashboardPage.vue` is orphaned.** It's fully built but **not imported/routed**
-  — `/trainer/classes` renders a placeholder stub instead. The backend endpoints it needs
-  already exist. → Wire it into `router/index.ts`. *(`AdminDashboardPage.vue` is now wired
-  to `/admin`.)*
-- **`AdminPage.vue` links to routes that don't exist** (`/admin/trainers`,
-  `/admin/classes`) → dead navigation.
+- **Several built pages are orphaned (not routed).** `PlansPage.vue` (the dedicated
+  membership checkout), `AdminDashboardPage.vue` and `pages/admin/AdminPage.vue` (both
+  superseded by `layouts/AdminLayout.vue` + `pages/admin/AdminDashboard.vue`), and
+  `pages/trainer/MyClassesPage.vue` exist but aren't used by the router. `/trainer/classes`
+  now renders `ClassesPage`, and membership **purchase happens on the Home page, not `/plans`**.
+- **Membership/plans API calls all live in one module:** `api/plans.ts`
+  (`getPlans` · `subscribe` · `getMyMemberships` · `cancelMembership`). Used by `stores/auth.ts`,
+  `HomePage.vue`, `PlansPage.vue`, and `useCancelMembership.ts`.
 - **No 401 response interceptor.** An expired JWT doesn't auto-logout; the SPA looks
   "logged in" until a page reload re-runs `/auth/me`.
-- **Hardcoded API URL in two places.** `api/axios.ts` and (separately) `ClassesPage.vue`
-  both hardcode `http://localhost:3000/...`. If you change the backend `PORT`
-  (`SETUP.md` even suggests `PORT=3001`), the frontend breaks with no warning. → Make it
-  `VITE_API_URL`-driven and route `ClassesPage` through the shared `api` instance.
+- **Hardcoded API URL.** `api/axios.ts` hardcodes `baseURL: http://localhost:3000/api`.
+  If you change the backend `PORT` (`SETUP.md` even suggests `PORT=3001`), the frontend
+  breaks with no warning. → Make it `VITE_API_URL`-driven. *(`ClassesPage.vue` now routes
+  through the shared `api` instance, so this is the only hardcoded spot left.)*
 - **Dead code:** `composables/useAuth.ts` duplicates the Pinia store and is unused;
   `vite-plugin-vue-devtools` is a dependency but not registered. Dark mode is forced
   (`class="dark"` in `index.html`, matched by `darkModeSelector: '.dark'` in `main.ts`)
@@ -398,6 +418,10 @@ debugging, or deploying.
   light→dark (`surface.0` lightest = text, `surface.900/950` darkest = backgrounds) —
   it was previously inverted, which made every un-overridden PrimeVue component (e.g.
   DataTable) render light-on-light; now fixed.
+- **Admin "Add schedule" trainer dropdown shows IDs, not names.** `AdminDashboardPage.vue`
+  builds each option label from `trainer.FullName || trainer.Name`, but `GET /api/classes`
+  returns the trainer as `TrainerName` — so options render as "Trainer 1 / 2 / 3". Selecting
+  still works (the value is `TrainerID`); only the labels are wrong. → Use `trainer.TrainerName`.
 
 ### Data / docs gotchas
 - **Seed class dates are fixed**, not relative. Scheduled demo classes are
@@ -406,10 +430,15 @@ debugging, or deploying.
 - **`DB_NAME` must stay `gym_db`.** `db:setup` ignores `DB_NAME` (the name is hardcoded
   in the SQL), but the running app connects using `DB_NAME`. Change it and the app
   can't find the database.
-- **Stale duplicate SQL files exist** at the repo root (`01_gym_schema_simple.sql`) and
-  `backend/02_gym_seed_data_simple.sql`. They are an **older schema** (no `Class_Types`,
-  different columns) and are **not** used by `db:setup`. Only run DB setup via
-  `npm run db:setup`; don't pipe the loose `.sql` files in by hand.
+- **Some classes shown in the UI are hardcoded, not from the DB.** The Home page "Our
+  Classes" tiles (`HomePage.vue`) are a static array (Fitness / Pilates / Yoga / CrossFit),
+  and `ClassesPage.vue` falls back to hardcoded `SAMPLE_CLASS_SCHEDULES` rows (e.g. "Coach
+  Alex") when a category has no real classes. Only **Yoga** and **Pilates** class types exist
+  in the seed, so the Fitness/CrossFit schedule pages always show placeholders. Classes you
+  actually create appear on `/classes/<category>`, never on the Home tiles.
+- **Admin schedule list is sorted oldest-first.** `GET /api/classes` returns
+  `ORDER BY StartDateTime ASC`, so a newly added (future) class lands at the **bottom** of the
+  AdminDashboardPage list, under already-finished ones.
 - **Class `category` is hardcoded to `Yoga`|`Pilates`** in the Zod validator, decoupled
   from the dynamic `Class_Types` table. You can create a new class type via the admin
   API, but you then can't create a class using it (400 error) until you edit
@@ -442,7 +471,7 @@ All paths are prefixed with `/api`. "Auth" = requires `Authorization: Bearer <to
 | POST | `/classes` | yes | admin/trainer | Create a class. |
 | PUT | `/classes/:id` | yes | admin/trainer | Update a class. |
 | PUT | `/classes/:id/cancel` | yes | admin/trainer | Cancel (status → cancelled). |
-| DELETE | `/classes/:id` | yes | admin/trainer | **Soft-cancel, not a real delete** (alias of cancel). |
+| DELETE | `/classes/:id` | yes | admin/trainer | **Hard delete** — removes the class row (its `Bookings` cascade-delete via FK). Used by the admin "Remove" button, which shows a confirm dialog. *(`PUT /:id/cancel` remains the soft-cancel.)* |
 | POST | `/classes/:id/join` | yes | member | Book the member into a class. |
 | GET | `/classes/my-bookings` | yes | member | The logged-in member's own bookings (joined with class + type + time + trainer). |
 | GET | `/plans` | no | — | List all membership plans (`PlanID, PlanName, DurationMonths, Price, IncludesClasses, Description`), ordered by `Price`. |
@@ -451,6 +480,8 @@ All paths are prefixed with `/api`. "Auth" = requires `Authorization: Bearer <to
 | PUT | `/memberships/:id/cancel` | yes | member/admin | **Soft-cancel** a membership (`Status`→`cancelled`; row kept, no refund). 404 if not found; **403 if a non-admin tries to cancel a membership they don't own**; 409 `MEMBERSHIP_NOT_ACTIVE` if it isn't currently `active`. Returns the updated membership. |
 | GET | `/admin/dashboard` | yes | admin | Counts (members, memberships, classes, bookings). |
 | GET | `/admin/class-bookings` | yes | admin | Per-class booking stats. |
+| GET | `/admin/users` | yes | admin | List all users. |
+| POST | `/admin/users` | yes | admin | Create a user with any role (`member`/`trainer`/`admin`). Body: `{ firstName, lastName, email, password, role, phone?, dateOfBirth? }`. |
 
 ---
 
@@ -491,7 +522,7 @@ npm run dev                   # open the printed http://localhost:5173 URL
 - Frontend loads but data/login fails → backend isn't running on port 3000, or you
   opened the app via `127.0.0.1` instead of `localhost`.
 - Port 3000 in use → change `PORT` in `backend/.env`, **but** then you must also update
-  the hardcoded URL in `frontend/src/api/axios.ts` (and `ClassesPage.vue`).
+  the hardcoded URL in `frontend/src/api/axios.ts`.
 - Member sees no upcoming classes → the seed class dates (June 2026) have passed;
   re-seed or edit `backend/db/02_gym_seed_data_simple.sql`.
 

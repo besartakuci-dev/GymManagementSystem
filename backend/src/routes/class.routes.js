@@ -4,6 +4,7 @@ import {
   classBookingsController,
   cancelClassController,
   createClassController,
+  deleteClassController,
   getClassController,
   joinClassController,
   listClassesController,
@@ -42,6 +43,6 @@ router.post('/:id/join', authenticate, authorize('member'), validate(joinClassSc
 router.post('/', authenticate, authorize('admin', 'trainer'), validate(createClassSchema), createClassController);
 router.put('/:id', authenticate, authorize('admin', 'trainer'), validate(updateClassSchema), updateClassController);
 router.put('/:id/cancel', authenticate, authorize('admin', 'trainer'), validate(classIdSchema), cancelClassController);
-router.delete('/:id', authenticate, authorize('admin', 'trainer'), validate(classIdSchema), cancelClassController);
+router.delete('/:id', authenticate, authorize('admin', 'trainer'), validate(classIdSchema), deleteClassController);
 
 export default router;

@@ -16,6 +16,7 @@ import {
   findClassTypes,
   findTrainerByUserId,
   trainerExists,
+  remove,
   update,
   updateStatus,
 } from '../models/class.model.js';
@@ -228,6 +229,13 @@ export async function cancelClass(user, classId) {
   assertCanManage(user, existing);
   await updateStatus(classId, 'cancelled');
   return findById(classId);
+}
+
+export async function deleteClass(user, classId) {
+  const existing = await requireClass(classId);
+  assertCanManage(user, existing);
+  await remove(classId);
+  return { id: Number(classId) };
 }
 
 export async function joinClass(user, classId, payload) {

@@ -1,6 +1,7 @@
 import {
   cancelClass,
   createClass,
+  deleteClass,
   getClassesDashboard,
   getClassBookings,
   getClass,
@@ -108,6 +109,11 @@ export const updateClassController = asyncHandler(async (req, res) => {
 export const cancelClassController = asyncHandler(async (req, res) => {
   const gymClass = await cancelClass(req.user, req.validated.params.id);
   sendSuccess(res, { class: withSchedule(gymClass) }, 'Class cancelled successfully');
+});
+
+export const deleteClassController = asyncHandler(async (req, res) => {
+  const result = await deleteClass(req.user, req.validated.params.id);
+  sendSuccess(res, result, 'Class deleted successfully');
 });
 
 export const joinClassController = asyncHandler(async (req, res) => {

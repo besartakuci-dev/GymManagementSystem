@@ -199,6 +199,16 @@ export async function updateStatus(classId, status) {
   return result.affectedRows;
 }
 
+export async function remove(classId) {
+  // Hard delete. The Bookings FK is ON DELETE CASCADE, so a class's bookings go with it.
+  const [result] = await pool.execute(
+    `DELETE FROM Classes WHERE ClassID = ?`,
+    [classId]
+  );
+
+  return result.affectedRows;
+}
+
 export async function findBookingByUserAndClass(userId, classId) {
   const [rows] = await pool.execute(
     `SELECT BookingID, UserID, ClassID, Status
