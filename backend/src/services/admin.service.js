@@ -7,6 +7,7 @@ import {
   findAllUsers,
   findById,
   createUserWithRole,
+  setActiveStatus,
 } from '../models/user.model.js';
 
 import bcrypt from 'bcrypt';
@@ -21,6 +22,10 @@ export async function getClassBookingsData() {
 
 export async function getAllUsers() {
   return await findAllUsers();
+}
+
+export async function setUserActiveStatus(userId, isActive) {
+  return await setActiveStatus(userId, isActive);
 }
 
 export async function createAdminUser({ email, password, firstName, lastName, phone, dateOfBirth, role }) {

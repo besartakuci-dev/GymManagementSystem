@@ -18,6 +18,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     roles?: string[]
+    hideShell?: boolean
   }
 }
 
@@ -30,7 +31,8 @@ const router = createRouter({
     { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
-    { path: '/unauthorized', component: UnauthorizedPage },
+    { path: '/unauthorized', component: UnauthorizedPage, meta: { hideShell: true } },
+    { path: '/dashboard',   redirect: '/admin' },
 
     // Member + Trainer + Admin
     {

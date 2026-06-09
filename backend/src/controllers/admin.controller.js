@@ -3,6 +3,7 @@ import {
   getClassBookingsData,
   getAllUsers,
   createAdminUser,
+  setUserActiveStatus,
 } from '../services/admin.service.js';
 
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -27,4 +28,11 @@ export const createUserController = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName, phone, dateOfBirth, role } = req.body;
   const user = await createAdminUser({ email, password, firstName, lastName, phone, dateOfBirth, role });
   sendSuccess(res, { user }, 'User created successfully', 201);
+});
+
+export const setUserActiveController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+  const user = await setUserActiveStatus(Number(id), Boolean(isActive));
+  sendSuccess(res, { user }, `User ${isActive ? 'activated' : 'deactivated'} successfully`);
 });

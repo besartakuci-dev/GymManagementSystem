@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const membership = ref<any>(null)
   const initialized = ref(false)
+  let initPromise: Promise<void> | null = null
 
   const hasMembership = computed(() => !!membership.value)
 
@@ -25,16 +26,22 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function init() {
     if (initialized.value) return
-    initialized.value = true
-    const token = localStorage.getItem('token')
-    if (!token) return
-    try {
-      const { data } = await getMe()
-      user.value = data.data.user
-      await refreshMembership()
-    } catch {
-      localStorage.removeItem('token')
+    if (!initPromise) {
+      initPromise = (async () => {
+        const token = localStorage.getItem('token')
+        if (token) {
+          try {
+            const { data } = await getMe()
+            user.value = data.data.user
+            await refreshMembership()
+          } catch {
+            localStorage.removeItem('token')
+          }
+        }
+        initialized.value = true
+      })()
     }
+    return initPromise
   }
 
   function setUser(u: any) {
@@ -46,6 +53,8 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('token')
     user.value = null
     membership.value = null
+    initialized.value = false
+    initPromise = null
   }
 
   return { user, membership, hasMembership, initialized, init, refreshMembership, setUser, logout }

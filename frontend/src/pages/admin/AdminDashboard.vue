@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
@@ -9,9 +9,13 @@ import Tag from 'primevue/tag'
 import { getDashboard, getClassBookings, getUsers} from '@/api/admin'
 import { getClasses, createClass, cancelClass } from '@/api/classes'
 import api from '@/api/axios'
+import { useAuthStore } from '@/stores/auth'
+import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
 
 const router = useRouter()
 const toast = useToast()
+const auth = useAuthStore()
+const isAdmin = computed(() => String(auth.user?.Role ?? '').toLowerCase() === 'admin')
 
 const stats = ref<any>(null)
 const users = ref<any[]>([])
@@ -121,7 +125,8 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <div class="dashboard">
+  <UnauthorizedPage v-if="!isAdmin" />
+  <div v-else class="dashboard">
 
     <h1>Dashboard</h1>
 
@@ -256,6 +261,7 @@ onMounted(loadAll)
 
   </div>
 </template>
+
 
 <style scoped>
 .dashboard { max-width: 1100px; }

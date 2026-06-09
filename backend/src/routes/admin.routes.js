@@ -4,6 +4,7 @@ import {
   classBookingsController,
   getUsersController,
   createUserController,
+  setUserActiveController,
 } from '../controllers/admin.controller.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorize } from '../middleware/authorize.js';
@@ -16,5 +17,6 @@ router.get('/dashboard', authenticate, authorize('admin'), dashboardController);
 router.get('/class-bookings', authenticate, authorize('admin'), classBookingsController);
 router.get('/users', getUsersController);
 router.post('/users', createUserController);
+router.patch('/users/:id', setUserActiveController);
 
 export default router;

@@ -54,7 +54,7 @@ async function handleLogin() {
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
     await auth.refreshMembership()
-    router.push('/classes')
+    router.push('/home')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}
@@ -81,7 +81,7 @@ async function handleRegister() {
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
     await auth.refreshMembership()
-    router.push('/classes')
+    router.push('/home')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}

@@ -44,3 +44,11 @@ export async function findAllUsers() {
   );
   return rows;
 }
+
+export async function setActiveStatus(userId, isActive) {
+  await pool.execute(
+    `UPDATE Users SET IsActive = ? WHERE UserID = ?`,
+    [isActive ? 1 : 0, userId]
+  );
+  return findById(userId);
+}
