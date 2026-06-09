@@ -13,6 +13,7 @@ import AdminLayout      from '@/layouts/AdminLayout.vue'
 import AdminDashboard   from '@/pages/admin/AdminDashboard.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
 import CreateUserPage   from '@/pages/admin/CreateUserPage.vue'
+import AdminClassesPage from '@/pages/admin/AdminClassesPage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -64,6 +65,7 @@ const router = createRouter({
         { path: '',             component: AdminDashboard },
         { path: 'members',      component: MembersPage },
         { path: 'users/create', component: CreateUserPage },
+        { path: 'classes',      component: AdminClassesPage },
       ],
     },
   ],

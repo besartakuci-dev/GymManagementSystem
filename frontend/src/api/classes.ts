@@ -2,7 +2,7 @@ import api from './axios'
 
 export interface ClassPayload {
   name: string
-  category: 'Yoga' | 'Pilates'
+  category: string
   date: string
   startTime: string
   endTime: string
