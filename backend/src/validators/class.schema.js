@@ -3,7 +3,7 @@ import { z } from 'zod';
 const statusSchema = z.enum(['scheduled', 'cancelled', 'completed']);
 const paymentMethodSchema = z.enum(['cash', 'card', 'bank_transfer']);
 const idParam = z.coerce.number().int().positive('Invalid class id');
-const categorySchema = z.enum(['Yoga', 'Pilates']);
+const categorySchema = z.string().trim().min(1, 'Class type is required').max(60, 'Class type cannot exceed 60 characters');
 
 const timeSchema = (label) =>
   z

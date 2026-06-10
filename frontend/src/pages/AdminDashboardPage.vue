@@ -1,7 +1,5 @@
 <template>
   <section class="admin-dashboard">
-    <Toast />
-
     <div class="hero">
       <p class="eyebrow">Admin Area</p>
       <h1>Admin Dashboard</h1>
@@ -97,7 +95,7 @@
       </div>
     </div>
 
-    <div class="table-card">
+    <div class="table-card" style="margin-bottom: 30px;">
       <div class="table-header">
         <div>
           <p class="eyebrow">Bookings</p>
@@ -122,16 +120,85 @@
         <Column field="BookedUsers" header="Booked Users" />
       </DataTable>
     </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <p class="eyebrow">User Management</p>
+          <h2>All Users</h2>
+        </div>
+
+        <Button label="Refresh" icon="pi pi-refresh" @click="loadDashboard" />
+      </div>
+
+      <DataTable
+        :value="users"
+        :loading="loading"
+        paginator
+        :rows="10"
+        :rowsPerPageOptions="[5, 10, 20]"
+        stripedRows
+        responsiveLayout="scroll"
+        filterDisplay="row"
+        v-model:filters="userFilters"
+        :globalFilterFields="['FirstName', 'LastName', 'Email', 'Role']"
+      >
+        <template #header>
+          <div class="table-search">
+            <span class="p-input-icon-left">
+              <i class="pi pi-search" />
+              <InputText v-model="userFilters['global'].value" placeholder="Search users..." />
+            </span>
+          </div>
+        </template>
+
+        <Column field="UserID" header="ID" style="width: 60px" />
+        <Column header="Name">
+          <template #body="{ data }">
+            {{ data.FirstName }} {{ data.LastName }}
+          </template>
+        </Column>
+        <Column field="Email" header="Email" />
+        <Column field="Role" header="Role">
+          <template #body="{ data }">
+            <Tag
+              :value="data.Role"
+              :severity="data.Role === 'admin' ? 'danger' : data.Role === 'trainer' ? 'warn' : 'info'"
+            />
+          </template>
+        </Column>
+        <Column field="Phone" header="Phone">
+          <template #body="{ data }">
+            {{ data.Phone || '—' }}
+          </template>
+        </Column>
+        <Column field="JoinDate" header="Joined">
+          <template #body="{ data }">
+            {{ data.JoinDate ? new Date(data.JoinDate).toLocaleDateString() : '—' }}
+          </template>
+        </Column>
+        <Column field="IsActive" header="Status">
+          <template #body="{ data }">
+            <Tag
+              :value="data.IsActive ? 'Active' : 'Inactive'"
+              :severity="data.IsActive ? 'success' : 'secondary'"
+            />
+          </template>
+        </Column>
+      </DataTable>
+    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
+import { FilterMatchMode } from '@primevue/core/api'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Tag from 'primevue/tag'
+import InputText from 'primevue/inputtext'
 import api from '@/api/axios'
 import { cancelClass, createClass } from '@/api/classes'
 
@@ -149,6 +216,11 @@ const stats = ref({
 const classBookings = ref<any[]>([])
 const schedules = ref<any[]>([])
 const trainers = ref<any[]>([])
+const users = ref<any[]>([])
+
+const userFilters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+})
 
 const scheduleForm = ref<{
   name: string
@@ -174,16 +246,18 @@ async function loadDashboard() {
   try {
     loading.value = true
 
-    const [statsResponse, bookingsResponse, classesResponse] = await Promise.all([
+    const [statsResponse, bookingsResponse, classesResponse, usersResponse] = await Promise.all([
       api.get('/admin/dashboard'),
       api.get('/admin/class-bookings'),
       api.get('/classes'),
+      api.get('/admin/users'),
     ])
 
     stats.value = statsResponse.data.data
     classBookings.value = bookingsResponse.data.data.classBookings
     schedules.value = classesResponse.data.data.classes ?? []
     trainers.value = classesResponse.data.data.trainers ?? []
+    users.value = usersResponse.data.data.users ?? []
 
     toast.add({
       severity: 'success',
@@ -428,6 +502,25 @@ onMounted(() => {
   border: none;
   color: #000;
   font-weight: 800;
+}
+
+.table-search {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+:deep(.p-inputtext) {
+  background: #0c0c0c;
+  border: 1px solid #3a3a3a;
+  color: #fff;
+  border-radius: 10px;
+}
+
+:deep(.p-tag) {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: capitalize;
 }
 
 @media (max-width: 1000px) {

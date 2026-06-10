@@ -1,6 +1,6 @@
 # Gym Management System — Backend
 
-Node.js + Express API for BBros Gym. Talks to MySQL, uses JWTs for auth, and splits users into three roles: admin, trainer, and member.
+Node.js + Express API for GymCore. Talks to MySQL, uses JWTs for auth, and splits users into three roles: admin, trainer, and member.
 
 ## Database diagram
 

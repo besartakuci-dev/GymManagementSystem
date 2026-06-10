@@ -17,16 +17,3 @@ html, body {
 #app {
   height: 100%;
 }
-
-/* PrimeVue input text visibility */
-.p-inputtext,
-.p-password-input,
-.p-datepicker-input {
-  color: #000000 !important;
-}
-
-.p-inputtext::placeholder,
-.p-password-input::placeholder,
-.p-datepicker-input::placeholder {
-  color: #6b6b6b !important;
-}

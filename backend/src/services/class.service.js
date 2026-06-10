@@ -9,16 +9,19 @@ import {
   findBookedClassIdsByUser,
   findBookingById,
   findBookingByUserAndClass,
+  findBookingsByUser,
   findById,
   findByTrainer,
   findClassTypeByName,
   findClassTypes,
   findTrainerByUserId,
   trainerExists,
+  remove,
   update,
   updateStatus,
 } from '../models/class.model.js';
 
+import { hasActiveMembership } from '../models/membership.model.js';
 import { ApiError } from '../utils/ApiError.js';
 
 function buildDateTime(date, time) {
@@ -77,6 +80,10 @@ export async function getClassesDashboard() {
 
 export async function getClassBookings(classId) {
   return await getBookingsByClassId(classId);
+}
+
+export async function listMyBookings(user) {
+  return findBookingsByUser(user.userId);
 }
 
 function assertValidClassTimes(startDateTime, endDateTime) {
@@ -224,7 +231,18 @@ export async function cancelClass(user, classId) {
   return findById(classId);
 }
 
+export async function deleteClass(user, classId) {
+  const existing = await requireClass(classId);
+  assertCanManage(user, existing);
+  await remove(classId);
+  return { id: Number(classId) };
+}
+
 export async function joinClass(user, classId, payload) {
+  if (!(await hasActiveMembership(user.userId))) {
+    throw new ApiError(403, 'An active membership is required to join classes', 'MEMBERSHIP_REQUIRED');
+  }
+
   const existing = await requireClass(classId);
 
   if (existing.Status !== 'scheduled') {

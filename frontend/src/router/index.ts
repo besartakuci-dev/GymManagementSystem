@@ -8,15 +8,23 @@ import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
 import BookingsPage     from '@/pages/BookingsPage.vue'
 import MyClassesPage    from '@/pages/trainer/MyClassesPage.vue'
-import AdminPage        from '@/pages/admin/AdminPage.vue'
+import UnauthorizedPage  from '@/pages/UnauthorizedPage.vue'
+import AdminLayout      from '@/layouts/AdminLayout.vue'
+import AdminDashboard   from '@/pages/admin/AdminDashboard.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
+<<<<<<< HEAD
 import UnauthorizedPage from '@/pages/UnauthorizedPage.vue'
 import AdminDashboardPage from '@/pages/AdminDashboardPage.vue'
+=======
+import CreateUserPage   from '@/pages/admin/CreateUserPage.vue'
+import AdminClassesPage from '@/pages/admin/AdminClassesPage.vue'
+>>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
 
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
     roles?: string[]
+    hideShell?: boolean
   }
 }
 
@@ -29,7 +37,8 @@ const router = createRouter({
     { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
-    { path: '/unauthorized', component: UnauthorizedPage },
+    { path: '/unauthorized', component: UnauthorizedPage, meta: { hideShell: true } },
+    { path: '/dashboard',   redirect: '/admin' },
 
     // Member + Trainer + Admin
     {
@@ -48,20 +57,21 @@ const router = createRouter({
     // Trainer + Admin
     {
       path: '/trainer/classes',
-      component: MyClassesPage,
+      component: ClassesPage,
       meta: { requiresAuth: true, roles: ['trainer', 'admin'] },
     },
 
-    // Admin only
+    // Admin — nested under AdminLayout (sidebar)
     {
       path: '/admin',
-      component: AdminPage,
+      component: AdminLayout,
       meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/members',
-      component: MembersPage,
-      meta: { requiresAuth: true, roles: ['admin'] },
+      children: [
+        { path: '',             component: AdminDashboard },
+        { path: 'members',      component: MembersPage },
+        { path: 'users/create', component: CreateUserPage },
+        { path: 'classes',      component: AdminClassesPage },
+      ],
     },
     { path: '/admin-dashboard', component: AdminDashboardPage },
   ],
@@ -70,14 +80,15 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  if (!auth.initialized) await auth.init()
+  await auth.init()
 
   if (to.path === '/login' && auth.user) return '/home'
 
   if (to.meta.requiresAuth && !auth.user) return '/login'
 
   if (to.meta.roles && auth.user) {
-    if (!to.meta.roles.includes(auth.user.Role)) return '/unauthorized'
+    const role = String(auth.user.Role || '').toLowerCase()
+    if (!to.meta.roles.includes(role)) return '/unauthorized'
   }
 })
 

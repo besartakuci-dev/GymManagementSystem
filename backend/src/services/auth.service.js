@@ -6,7 +6,7 @@ import { ApiError } from '../utils/ApiError.js';
 const BCRYPT_ROUNDS = 10;
 
 function buildTokenPayload(user) {
-  return { sub: user.UserID, role: user.Role, email: user.Email };
+  return { sub: user.UserID, role: String(user.Role).toLowerCase(), email: user.Email };
 }
 
 function safeUser(user) {

@@ -53,7 +53,8 @@ async function handleLogin() {
     const { data } = await login({ email: form.email, password: form.password })
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/classes')
+    await auth.refreshMembership()
+    router.push('/home')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}
@@ -79,7 +80,8 @@ async function handleRegister() {
     const { data } = await register(payload)
     localStorage.setItem('token', data.data.token)
     auth.setUser(data.data.user)
-    router.push('/classes')
+    await auth.refreshMembership()
+    router.push('/home')
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Something went wrong'
     errorDetails.value = e.response?.data?.details ?? {}
@@ -94,7 +96,7 @@ async function handleRegister() {
 
     <!-- Left: cover image -->
     <div class="cover">
-      <img :src="coverImage" alt="BBros Gym" />
+      <img :src="coverImage" alt="GymCore" />
     </div>
 
     <!-- Right: form -->

@@ -2,7 +2,7 @@ import api from './axios'
 
 export interface ClassPayload {
   name: string
-  category: 'Yoga' | 'Pilates'
+  category: string
   date: string
   startTime: string
   endTime: string
@@ -12,6 +12,7 @@ export interface ClassPayload {
 }
 
 export const getClasses = () => api.get('/classes')
+export const getMyBookings = () => api.get('/classes/my-bookings')
 export const getClassById = (id: number) => api.get(`/classes/${id}`)
 export const getClassesByTrainer = (trainerId: number) => api.get(`/classes/trainer/${trainerId}`)
 export const createClass = (payload: ClassPayload) => api.post('/classes', payload)

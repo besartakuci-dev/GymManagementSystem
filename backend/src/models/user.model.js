@@ -28,3 +28,27 @@ export async function createUser({ email, passwordHash, firstName, lastName, pho
   );
   return result.insertId;
 }
+
+export async function createUserWithRole({ email, passwordHash, role, firstName, lastName, phone, dateOfBirth }) {
+  const [result] = await pool.execute(
+    `INSERT INTO Users (Email, PasswordHash, Role, FirstName, LastName, Phone, DateOfBirth)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [email, passwordHash, role, firstName, lastName, phone ?? null, dateOfBirth ?? null]
+  );
+  return result.insertId;
+}
+
+export async function findAllUsers() {
+  const [rows] = await pool.execute(
+    `SELECT ${SAFE_COLUMNS} FROM Users ORDER BY CreatedAt DESC`
+  );
+  return rows;
+}
+
+export async function setActiveStatus(userId, isActive) {
+  await pool.execute(
+    `UPDATE Users SET IsActive = ? WHERE UserID = ?`,
+    [isActive ? 1 : 0, userId]
+  );
+  return findById(userId);
+}

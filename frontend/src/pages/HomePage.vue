@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { onMounted, ref } from 'vue'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
+<<<<<<< HEAD
 import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import Divider from 'primevue/divider'
@@ -12,6 +14,14 @@ import api from '@/api/axios'
 import fitnesImg from '@/assets/fitnes.png'
 import pilatesImg from '@/assets/pilates.png'
 import yogaImg from '@/assets/yoga.png'
+=======
+import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '@/stores/auth'
+import { getPlans, subscribe } from '@/api/plans'
+import fitnesImg   from '@/assets/fitnes.png'
+import pilatesImg  from '@/assets/pilates.png'
+import yogaImg     from '@/assets/yoga.png'
+>>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
 import crossfitImg from '@/assets/crossfit.png'
 
 interface Trainer {
@@ -25,6 +35,47 @@ interface Trainer {
 }
 
 const auth = useAuthStore()
+const toast = useToast()
+
+const plans = ref<any[]>([])
+const plansLoading = ref(true)
+const buyingPlanId = ref<number | null>(null)
+
+onMounted(async () => {
+  try {
+    const { data } = await getPlans()
+    plans.value = data.data.plans ?? []
+  } catch {
+    plans.value = []
+  } finally {
+    plansLoading.value = false
+  }
+  if (auth.user) auth.refreshMembership()
+})
+
+async function buyPlan(plan: any) {
+  if (!auth.user || auth.hasMembership) return
+  buyingPlanId.value = plan.PlanID
+  try {
+    await subscribe(plan.PlanID)
+    await auth.refreshMembership()
+    toast.add({
+      severity: 'success',
+      summary: 'Membership activated',
+      detail: `You're now on the ${plan.PlanName} plan. You can join classes!`,
+      life: 4000,
+    })
+  } catch (e: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not activate membership',
+      detail: e.response?.data?.message ?? 'Something went wrong',
+      life: 4000,
+    })
+  } finally {
+    buyingPlanId.value = null
+  }
+}
 
 const trainers = ref<Trainer[]>([])
 const trainersLoading = ref(false)
@@ -119,10 +170,14 @@ onMounted(() => {
       </div>
 
       <h1>TRAIN HARDER.<br />LIVE STRONGER.</h1>
+<<<<<<< HEAD
       <p>
         BBros Gym is built for people who want discipline, progress, and professional coaching in every session.
       </p>
 
+=======
+      <p>GymCore — where results happen. Join a community built around performance, discipline, and progress.</p>
+>>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
       <template v-if="auth.user">
         <p class="welcome">Welcome back, <strong>{{ auth.user.FirstName }}</strong>. Ready for today's session?</p>
       </template>
@@ -143,6 +198,63 @@ onMounted(() => {
           <p>{{ f.desc }}</p>
         </template>
       </Card>
+    </section>
+
+    <!-- Membership plans -->
+    <section class="memberships">
+      <div class="section-header">
+        <h2>Membership Plans</h2>
+        <p>Choose a plan to unlock the gym and start joining classes.</p>
+      </div>
+
+      <p v-if="auth.user && auth.hasMembership" class="membership-banner">
+        <i class="pi pi-check-circle" />
+        You have an active membership<span v-if="auth.membership?.PlanName"> — <strong>{{ auth.membership.PlanName }}</strong></span>. You're all set to join classes.
+      </p>
+
+      <p v-if="plansLoading" class="status">Loading plans...</p>
+      <p v-else-if="!plans.length" class="status">No membership plans available right now.</p>
+
+      <div v-else class="plans-grid">
+        <Card
+          v-for="plan in plans"
+          :key="plan.PlanID"
+          class="plan-card"
+          :class="{ active: auth.hasMembership && auth.membership?.PlanID === plan.PlanID }"
+        >
+          <template #content>
+            <h3>{{ plan.PlanName }}</h3>
+            <div class="price">
+              <span class="amount">€{{ Number(plan.Price).toFixed(0) }}</span>
+              <span class="period">/ {{ plan.DurationMonths }} {{ plan.DurationMonths === 1 ? 'month' : 'months' }}</span>
+            </div>
+            <p class="plan-desc">{{ plan.Description }}</p>
+            <p class="includes">
+              <i :class="plan.IncludesClasses ? 'pi pi-check' : 'pi pi-times'" />
+              {{ plan.IncludesClasses ? 'Includes group classes' : 'Gym access only' }}
+            </p>
+
+            <RouterLink v-if="!auth.user" to="/login">
+              <Button label="Sign in to join" outlined fluid />
+            </RouterLink>
+            <Button
+              v-else-if="auth.hasMembership"
+              :label="auth.membership?.PlanID === plan.PlanID ? 'Current plan' : 'Already a member'"
+              icon="pi pi-check"
+              disabled
+              fluid
+            />
+            <Button
+              v-else
+              label="Get this plan"
+              :loading="buyingPlanId === plan.PlanID"
+              :disabled="buyingPlanId !== null"
+              @click="buyPlan(plan)"
+              fluid
+            />
+          </template>
+        </Card>
+      </div>
     </section>
 
     <!-- Classes -->
@@ -381,11 +493,124 @@ main {
   line-height: 1.5;
 }
 
+<<<<<<< HEAD
 /* Sections */
 .classes,
 .trainers {
   padding: 3rem 4rem 6rem;
   max-width: 1220px;
+=======
+/* Memberships */
+.memberships {
+  padding: 2rem 4rem 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.membership-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--gym-orange-subtle);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: var(--gym-text);
+  font-size: 0.95rem;
+}
+
+.membership-banner i {
+  color: var(--gym-orange);
+}
+
+.membership-banner strong {
+  color: var(--gym-orange);
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.plan-card {
+  background: var(--gym-surface) !important;
+  border: 1px solid var(--gym-border) !important;
+  text-align: center;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gym-orange) !important;
+}
+
+.plan-card.active {
+  border-color: var(--gym-orange) !important;
+  box-shadow: 0 0 0 1px var(--gym-orange);
+}
+
+.plan-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gym-text);
+  margin-bottom: 0.5rem;
+}
+
+.plan-card .price {
+  margin-bottom: 0.75rem;
+}
+
+.plan-card .amount {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gym-orange);
+}
+
+.plan-card .period {
+  font-size: 0.85rem;
+  color: var(--gym-text-muted);
+}
+
+.plan-desc {
+  font-size: 0.88rem;
+  color: var(--gym-text-muted);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+  min-height: 2.6rem;
+}
+
+.includes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--gym-text-muted);
+  margin-bottom: 1rem;
+}
+
+.includes .pi-check {
+  color: var(--gym-orange);
+}
+
+.includes .pi-times {
+  color: var(--gym-text-muted);
+}
+
+.status {
+  text-align: center;
+  color: var(--gym-text-muted);
+}
+
+/* Classes */
+.classes {
+  padding: 2rem 4rem 5rem;
+  max-width: 1200px;
+>>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
   margin: 0 auto;
 }
 
@@ -450,6 +675,7 @@ main {
   height: 210px;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s;
 }
 
 .card-body h3 {
@@ -480,6 +706,7 @@ main {
   line-height: 1.65;
 }
 
+<<<<<<< HEAD
 /* Trainers */
 .trainers {
   background:
@@ -701,3 +928,6 @@ main {
   }
 }
 </style>
+=======
+</style>
+>>>>>>> c2414002c786a360498184c8b29ca26b330d6afb

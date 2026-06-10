@@ -10,7 +10,7 @@ export function authenticate(req, res, next) {
   const token = authHeader.slice(7);
   try {
     const payload = verifyToken(token);
-    req.user = { userId: payload.sub, role: payload.role, email: payload.email };
+    req.user = { userId: payload.sub, role: String(payload.role).toLowerCase(), email: payload.email };
     next();
   } catch {
     next(new ApiError(401, 'Invalid or expired token', 'INVALID_TOKEN'));
