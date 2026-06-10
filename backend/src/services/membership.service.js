@@ -2,16 +2,11 @@ import {
   createMembership,
   findActiveMembershipByUser,
   findAllMembershipsByUser,
-  findAllPlans,
   findMembershipById,
-  findPlanById,
   updateMembershipStatus,
 } from '../models/membership.model.js';
+import { findPlanById } from '../models/plan.model.js';
 import { ApiError } from '../utils/ApiError.js';
-
-export async function listPlans() {
-  return findAllPlans();
-}
 
 export async function getMyMembership(userId) {
   const [memberships, active] = await Promise.all([
@@ -24,7 +19,8 @@ export async function getMyMembership(userId) {
 
 export async function purchaseMembership(userId, { planId, paymentMethod }) {
   const plan = await findPlanById(planId);
-  if (!plan) throw new ApiError(404, 'Plan not found', 'PLAN_NOT_FOUND');
+  // A retired (soft-deleted) plan is not purchasable — treat it as not found.
+  if (!plan || !plan.IsActive) throw new ApiError(404, 'Plan not found', 'PLAN_NOT_FOUND');
 
   // Demo / mock payment: no gateway, no card validation — it always succeeds.
   // We simply record a paid, active membership for the authenticated user.

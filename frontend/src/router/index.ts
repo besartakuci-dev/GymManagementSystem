@@ -3,6 +3,8 @@ import { useAuthStore } from '@/stores/auth'
 
 import HomePage         from '@/pages/HomePage.vue'
 import AuthPage         from '@/pages/AuthPage.vue'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage.vue'
+import ResetPasswordPage  from '@/pages/ResetPasswordPage.vue'
 import ClassesPage      from '@/pages/ClassesPage.vue'
 import AboutPage        from '@/pages/AboutPage.vue'
 import ProfilePage      from '@/pages/ProfilePage.vue'
@@ -14,6 +16,7 @@ import AdminDashboard   from '@/pages/admin/AdminDashboard.vue'
 import MembersPage      from '@/pages/admin/MembersPage.vue'
 import CreateUserPage   from '@/pages/admin/CreateUserPage.vue'
 import AdminClassesPage from '@/pages/admin/ClassesPage.vue'
+import AdminPlansPage   from '@/pages/admin/PlansPage.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -32,6 +35,8 @@ const router = createRouter({
     { path: '/classes/:type?', name: 'class-schedule', component: ClassesPage },
     { path: '/about',        component: AboutPage },
     { path: '/login',        component: AuthPage },
+    { path: '/forgot-password', component: ForgotPasswordPage },
+    { path: '/reset-password',  component: ResetPasswordPage },
     { path: '/unauthorized', component: UnauthorizedPage, meta: { hideShell: true } },
     { path: '/dashboard',   redirect: '/admin' },
 
@@ -64,9 +69,9 @@ const router = createRouter({
       children: [
         { path: '',             component: AdminDashboard },
         { path: 'classes',      component: AdminClassesPage },
+        { path: 'plans',        component: AdminPlansPage },
         { path: 'members',      component: MembersPage },
         { path: 'users/create', component: CreateUserPage },
-        { path: 'classes',      component: AdminClassesPage },
       ],
     },
   ],

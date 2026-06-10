@@ -6,6 +6,7 @@ const navItems = [
   { icon: 'pi pi-users',      label: 'Users',        to: '/admin/members' },
   { icon: 'pi pi-user-plus',  label: 'Create User',  to: '/admin/users/create' },
   { icon: 'pi pi-calendar',   label: 'Classes',      to: '/admin/classes' },
+  { icon: 'pi pi-tags',       label: 'Plans',        to: '/admin/plans' },
 ]
 </script>
 

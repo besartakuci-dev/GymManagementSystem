@@ -47,7 +47,14 @@ CREATE TABLE Membership_Plans (
     DurationMonths      INT             NOT NULL,
     Price               DECIMAL(10,2)   NOT NULL,
     IncludesClasses     BOOLEAN         NOT NULL DEFAULT FALSE,
-    Description         TEXT
+    Description         TEXT,
+    Features            JSON            NULL,
+    IsActive            BOOLEAN         NOT NULL DEFAULT TRUE,
+    IsPopular           BOOLEAN         NOT NULL DEFAULT FALSE,
+    SortOrder           INT             NOT NULL DEFAULT 0,
+    CreatedAt           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_plans_active_sort (IsActive, SortOrder)
 ) ENGINE=InnoDB;
 
 

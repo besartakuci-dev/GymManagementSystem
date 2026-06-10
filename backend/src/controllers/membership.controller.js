@@ -1,16 +1,10 @@
 import {
   cancelMembership,
   getMyMembership,
-  listPlans,
   purchaseMembership,
 } from '../services/membership.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/response.js';
-
-export const listPlansController = asyncHandler(async (req, res) => {
-  const plans = await listPlans();
-  sendSuccess(res, { plans });
-});
 
 export const myMembershipController = asyncHandler(async (req, res) => {
   const { memberships, active } = await getMyMembership(req.user.userId);

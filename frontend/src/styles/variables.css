@@ -32,6 +32,8 @@
   /* shadows */
   --gym-shadow-glow:    0 8px 30px rgba(249, 115, 22, 0.3);
   --gym-shadow-glow-lg: 0 10px 40px rgba(249, 115, 22, 0.3);
+  --gym-shadow-glow-rest:   0 4px 20px rgba(249, 115, 22, 0.25);  /* R1 primary CTA — subtle glow at rest */
+  --gym-shadow-glow-strong: 0 8px 30px rgba(249, 115, 22, 0.35);  /* R1 primary CTA — stronger glow on hover */
   --gym-shadow-lift:    0 20px 50px rgba(0, 0, 0, 0.3);
   --gym-shadow-header:  0 4px 30px rgba(0, 0, 0, 0.5);
   --gym-focus-ring:     0 0 0 3px rgba(249, 115, 22, 0.1);

@@ -1,4 +1,4 @@
-﻿USE gym_db;
+USE gym_db;
 
 
 -- USERS  (1 admin + 3 trainers + 10 members = 14 users)
@@ -40,7 +40,19 @@ INSERT INTO Membership_Plans (PlanID, PlanName, DurationMonths, Price, IncludesC
 (4, 'Vjetor',  12, 420.00, TRUE,  'Plani Standard pÃ«r 12 muaj â€” kursim 60 EUR.');
 
 
--- MEMBERSHIPS 
+-- Storefront metadata for the plans above (the columns added by migration 001).
+-- Kept as a separate UPDATE so the description text above stays byte-for-byte unchanged.
+UPDATE Membership_Plans SET SortOrder = 1, IsPopular = FALSE,
+  Features = JSON_ARRAY('Full gym floor access', 'Open 06:00-22:00', 'Locker room') WHERE PlanID = 1;
+UPDATE Membership_Plans SET SortOrder = 2, IsPopular = TRUE,
+  Features = JSON_ARRAY('Everything in Bazik', 'Unlimited group classes', 'Starter workout plan') WHERE PlanID = 2;
+UPDATE Membership_Plans SET SortOrder = 3, IsPopular = FALSE,
+  Features = JSON_ARRAY('Everything in Standard', 'Priority class booking', '1 personal training session / month') WHERE PlanID = 3;
+UPDATE Membership_Plans SET SortOrder = 4, IsPopular = FALSE,
+  Features = JSON_ARRAY('Everything in Standard', '12 months at a reduced rate', 'Save 60 EUR per year') WHERE PlanID = 4;
+
+
+-- MEMBERSHIPS
 
 INSERT INTO Memberships (MembershipID, UserID, PlanID, StartDate, EndDate, Status, Amount, PaymentMethod, PaymentStatus, PaidAt) VALUES
 (1,  5,  3, '2025-04-01', '2025-05-01', 'active',  65.00,  'card',          'paid', '2025-04-01 09:15:22'),
@@ -88,28 +100,28 @@ INSERT INTO Classes (ClassID, Name, ClassTypeID, TrainerID, StartDateTime, EndDa
 
 -- BOOKINGS
 
-INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status) VALUES
--- Past â€” Class 1 (Joga)
-(1,  6,  1, '2025-05-10 10:22:00', 'attended'),
-(2,  8,  1, '2025-05-11 14:18:00', 'attended'),
-(3,  12, 1, '2025-05-12 08:00:00', 'attended'),
-(4,  14, 1, '2025-05-11 21:30:00', 'no_show'),
--- Past â€” Class 2 (HIIT)
-(5,  5,  2, '2025-05-12 09:15:00', 'attended'),
-(6,  7,  2, '2025-05-12 19:00:00', 'attended'),
-(7,  10, 2, '2025-05-13 07:45:00', 'attended'),
--- Past â€” Class 3 (ForcÃ«)
-(8,  5,  3, '2025-05-13 11:00:00', 'attended'),
-(9,  7,  3, '2025-05-13 16:30:00', 'attended'),
-(10, 13, 3, '2025-05-14 08:00:00', 'attended'),
--- Upcoming bookings
-(11, 6,  4, '2025-05-17 19:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-17 19:00:00'),
-(12, 8,  4, '2025-05-17 20:15:00', 'booked', 8.00, 'cash', 'paid', '2025-05-17 20:15:00'),
-(13, 12, 4, '2025-05-18 09:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-18 09:00:00'),
+INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status, PaymentMethod) VALUES
+-- Past bookings (attended / no_show) — Amount/PaymentStatus/PaidAt use their column defaults
+(1,  6,  1, '2025-05-10 10:22:00', 'attended', 'cash'),
+(2,  8,  1, '2025-05-11 14:18:00', 'attended', 'card'),
+(3,  12, 1, '2025-05-12 08:00:00', 'attended', 'cash'),
+(4,  14, 1, '2025-05-11 21:30:00', 'no_show',  'card'),
+(5,  5,  2, '2025-05-12 09:15:00', 'attended', 'cash'),
+(6,  7,  2, '2025-05-12 19:00:00', 'attended', 'card'),
+(7,  10, 2, '2025-05-13 07:45:00', 'attended', 'cash'),
+(8,  5,  3, '2025-05-13 11:00:00', 'attended', 'card'),
+(9,  7,  3, '2025-05-13 16:30:00', 'attended', 'cash'),
+(10, 13, 3, '2025-05-14 08:00:00', 'attended', 'card');
+
+-- Upcoming bookings (paid)
+INSERT INTO Bookings (BookingID, UserID, ClassID, BookingDate, Status, Amount, PaymentMethod, PaymentStatus, PaidAt) VALUES
+(11, 6,  4, '2025-05-17 19:00:00', 'booked', 8.00,  'card', 'paid', '2025-05-17 19:00:00'),
+(12, 8,  4, '2025-05-17 20:15:00', 'booked', 8.00,  'cash', 'paid', '2025-05-17 20:15:00'),
+(13, 12, 4, '2025-05-18 09:00:00', 'booked', 8.00,  'card', 'paid', '2025-05-18 09:00:00'),
 (14, 5,  5, '2025-05-17 22:00:00', 'booked', 10.00, 'card', 'paid', '2025-05-17 22:00:00'),
 (15, 7,  5, '2025-05-18 07:30:00', 'booked', 10.00, 'cash', 'paid', '2025-05-18 07:30:00'),
-(16, 5,  6, '2025-05-18 12:00:00', 'booked', 8.00, 'card', 'paid', '2025-05-18 12:00:00'),
-(17, 13, 6, '2025-05-19 09:00:00', 'booked', 8.00, 'cash', 'paid', '2025-05-19 09:00:00'),
+(16, 5,  6, '2025-05-18 12:00:00', 'booked', 8.00,  'card', 'paid', '2025-05-18 12:00:00'),
+(17, 13, 6, '2025-05-19 09:00:00', 'booked', 8.00,  'cash', 'paid', '2025-05-19 09:00:00'),
 (18, 10, 7, '2025-05-19 18:45:00', 'booked', 10.00, 'card', 'paid', '2025-05-19 18:45:00'),
 (19, 12, 8, '2025-05-20 14:20:00', 'booked', 10.00, 'cash', 'paid', '2025-05-20 14:20:00');
 

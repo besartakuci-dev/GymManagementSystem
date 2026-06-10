@@ -1,26 +1,7 @@
 import { pool } from '../config/db.js';
 
-export async function findAllPlans() {
-  const [rows] = await pool.execute(
-    `SELECT PlanID, PlanName, DurationMonths, Price, IncludesClasses, Description
-     FROM Membership_Plans
-     ORDER BY Price ASC`
-  );
-
-  return rows;
-}
-
-export async function findPlanById(planId) {
-  const [rows] = await pool.execute(
-    `SELECT PlanID, PlanName, DurationMonths, Price, IncludesClasses, Description
-     FROM Membership_Plans
-     WHERE PlanID = ?
-     LIMIT 1`,
-    [planId]
-  );
-
-  return rows[0] ?? null;
-}
+// NOTE: plan catalog SQL (findAllPlans / findPlanById / create / update / soft-delete)
+// lives in models/plan.model.js — the single source of truth for the Plans resource.
 
 export async function findAllMembershipsByUser(userId) {
   const [rows] = await pool.execute(

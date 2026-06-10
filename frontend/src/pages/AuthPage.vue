@@ -117,6 +117,7 @@ async function handleRegister() {
           </ul>
         </Message>
         <Button type="submit" label="Login" :loading="loading" fluid />
+        <RouterLink to="/forgot-password" class="forgot-link">Forgot password?</RouterLink>
       </form>
 
       <!-- Register -->
@@ -248,6 +249,20 @@ form {
   margin: 0.4rem 0 0;
   padding-left: 1.2rem;
   font-size: 0.82rem;
+}
+
+/* subtle login-form link, eases toward orange on hover (matches the app's
+   muted auth links). Navigates to the forgot-password screen. */
+.forgot-link {
+  align-self: center;
+  font-size: 0.85rem;
+  color: var(--gym-text-muted);
+  text-decoration: none;
+  transition: var(--gym-transition);
+}
+
+.forgot-link:hover {
+  color: var(--gym-orange);
 }
 
 /* Collapse image on small screens */

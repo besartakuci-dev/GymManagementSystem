@@ -46,9 +46,10 @@ a,
    PrimeVue theme rules. */
 
 /* Primary CTA: 135° orange gradient fill, bold uppercase label, 8px radius.
-   The lift + orange glow on hover comes from the solid-primary rule above; the
-   explicit :hover here re-asserts the gradient so the theme's flat hover bg
-   doesn't replace it. */
+   It also carries a subtle orange glow at rest. On hover it lifts (-2px) and the
+   glow strengthens; the explicit :hover re-asserts the gradient (so the theme's
+   flat hover bg doesn't replace it) and the stronger glow over the generic
+   solid-primary hover rule above (ties on specificity, wins on source order). */
 .p-button.gym-btn-primary,
 .p-button.gym-btn-primary:enabled {
   background: linear-gradient(135deg, var(--gym-orange), var(--gym-orange-hover));
@@ -58,12 +59,15 @@ a,
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 700;
+  box-shadow: var(--gym-shadow-glow-rest);
 }
 
 .p-button.gym-btn-primary:enabled:hover {
   background: linear-gradient(135deg, var(--gym-orange), var(--gym-orange-hover));
   border-color: var(--gym-orange);
   color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--gym-shadow-glow-strong);
 }
 
 /* Secondary / nav button: transparent with a faint white border; subtle white

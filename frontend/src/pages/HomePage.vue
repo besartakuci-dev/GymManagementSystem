@@ -284,7 +284,7 @@ const filteredPrograms = computed(() =>
     </section>
 
     <!-- Membership plans -->
-    <section class="memberships">
+    <section id="membership" class="memberships">
       <div class="section-header" v-reveal>
         <h2>Membership Plans</h2>
         <p>Choose a plan to unlock the gym and start joining classes.</p>
