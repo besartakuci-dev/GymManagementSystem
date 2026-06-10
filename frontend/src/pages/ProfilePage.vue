@@ -1,13 +1,15 @@
 <script setup lang="ts">
-<<<<<<< HEAD
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import InputText from 'primevue/inputtext'
 import Toast from 'primevue/toast'
+import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
 import { useAuthStore } from '@/stores/auth'
+import { useCancelMembership } from '@/composables/useCancelMembership'
 import api from '@/api/axios'
 
 interface TrainerProfile {
@@ -22,6 +24,7 @@ interface TrainerProfile {
 
 const auth = useAuthStore()
 const toast = useToast()
+const { requestCancel, cancelling } = useCancelMembership()
 
 const isTrainer = computed(() => auth.user?.Role === 'trainer')
 
@@ -32,6 +35,11 @@ const trainerForm = ref({
   specialization: '',
   bio: '',
 })
+
+function formatDate(value?: unknown) {
+  if (!value) return '-'
+  return new Date(value as string).toLocaleDateString()
+}
 
 async function loadTrainerProfile() {
   if (!isTrainer.value) return
@@ -82,27 +90,9 @@ async function saveTrainerProfile() {
   }
 }
 
-function formatDate(value?: string) {
-  if (!value) return '-'
-  return new Date(value).toLocaleDateString()
-}
-
 onMounted(() => {
   loadTrainerProfile()
 })
-=======
-import { RouterLink } from 'vue-router'
-import Card from 'primevue/card'
-import Button from 'primevue/button'
-import Tag from 'primevue/tag'
-import { useAuthStore } from '@/stores/auth'
-import { useCancelMembership } from '@/composables/useCancelMembership'
-
-const auth = useAuthStore()
-const { requestCancel, cancelling } = useCancelMembership()
-
-const formatDate = (value: unknown) => (value ? new Date(value as string).toLocaleDateString() : '')
->>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
 </script>
 
 <template>
@@ -113,7 +103,7 @@ const formatDate = (value: unknown) => (value ? new Date(value as string).toLoca
       <div class="page-header">
         <p class="eyebrow">Account</p>
         <h1>My Profile</h1>
-        <p>Manage your account information and trainer biography.</p>
+        <p>Manage your account information, membership, and trainer biography.</p>
       </div>
 
       <Card class="profile-card">
@@ -157,7 +147,57 @@ const formatDate = (value: unknown) => (value ? new Date(value as string).toLoca
         </template>
       </Card>
 
-<<<<<<< HEAD
+      <Card class="profile-card membership-card">
+        <template #title>
+          <span class="card-title">Membership</span>
+        </template>
+
+        <template #content>
+          <div v-if="auth.hasMembership" class="membership-active">
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Plan</span>
+                <span class="value">{{ auth.membership?.PlanName }}</span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Status</span>
+                <span class="value">
+                  <Tag
+                    :value="auth.membership?.Status"
+                    :severity="auth.membership?.Status === 'active' ? 'success' : 'secondary'"
+                    class="status-tag"
+                  />
+                </span>
+              </div>
+
+              <div class="info-item">
+                <span class="label">Valid Until</span>
+                <span class="value">{{ formatDate(auth.membership?.EndDate) }}</span>
+              </div>
+            </div>
+
+            <Button
+              v-if="auth.membership?.Status === 'active'"
+              label="Cancel membership"
+              icon="pi pi-times"
+              severity="danger"
+              outlined
+              :loading="cancelling"
+              class="cancel-btn"
+              @click="requestCancel(auth.membership)"
+            />
+          </div>
+
+          <div v-else class="membership-empty">
+            <p>You don't have an active membership.</p>
+            <RouterLink to="/plans">
+              <Button label="View plans" icon="pi pi-credit-card" />
+            </RouterLink>
+          </div>
+        </template>
+      </Card>
+
       <Card v-if="isTrainer" class="trainer-card">
         <template #content>
           <div class="trainer-header">
@@ -207,51 +247,6 @@ const formatDate = (value: unknown) => (value ? new Date(value as string).toLoca
               @click="saveTrainerProfile"
             />
           </div>
-=======
-      <Card class="profile-card membership-card">
-        <template #title>
-          <span class="card-title">Membership</span>
-        </template>
-        <template #content>
-          <div v-if="auth.hasMembership" class="membership-active">
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">Plan</span>
-                <span class="value">{{ auth.membership?.PlanName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Status</span>
-                <span class="value">
-                  <Tag
-                    :value="auth.membership?.Status"
-                    :severity="auth.membership?.Status === 'active' ? 'success' : 'secondary'"
-                    class="status-tag"
-                  />
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="label">Valid Until</span>
-                <span class="value">{{ formatDate(auth.membership?.EndDate) }}</span>
-              </div>
-            </div>
-            <Button
-              v-if="auth.membership?.Status === 'active'"
-              label="Cancel membership"
-              icon="pi pi-times"
-              severity="danger"
-              outlined
-              :loading="cancelling"
-              class="cancel-btn"
-              @click="requestCancel(auth.membership)"
-            />
-          </div>
-          <div v-else class="membership-empty">
-            <p>You don't have an active membership.</p>
-            <RouterLink to="/plans">
-              <Button label="View plans" icon="pi pi-credit-card" />
-            </RouterLink>
-          </div>
->>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
         </template>
       </Card>
     </div>
@@ -334,13 +329,6 @@ h1 {
   text-transform: capitalize;
 }
 
-<<<<<<< HEAD
-.trainer-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-=======
 .membership-card {
   margin-top: 1.5rem;
 }
@@ -370,9 +358,11 @@ h1 {
   color: var(--gym-text-muted);
 }
 
-@media (max-width: 480px) {
-  .info-grid { grid-template-columns: 1fr; }
->>>>>>> c2414002c786a360498184c8b29ca26b330d6afb
+.trainer-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .trainer-header h2 {
