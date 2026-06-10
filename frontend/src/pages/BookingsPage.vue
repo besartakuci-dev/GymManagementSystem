@@ -53,12 +53,16 @@ onMounted(loadBookings)
           <h1>My Bookings</h1>
           <p>Classes you've booked.</p>
         </div>
-        <Button label="Refresh" icon="pi pi-refresh" outlined :loading="loading" @click="loadBookings" />
+        <div class="header-actions">
+          <RouterLink to="/classes">
+            <Button label="Find Classes" icon="pi pi-search" />
+          </RouterLink>
+          <Button label="Refresh" icon="pi pi-refresh" outlined :loading="loading" @click="loadBookings" />
+        </div>
       </div>
 
       <p v-if="error" class="status error">{{ error }}</p>
 
-      <!-- Empty state -->
       <div v-else-if="!loading && bookings.length === 0" class="empty">
         <i class="pi pi-calendar-times" />
         <h2>No bookings yet</h2>
@@ -68,7 +72,6 @@ onMounted(loadBookings)
         </RouterLink>
       </div>
 
-      <!-- Bookings table -->
       <DataTable
         v-else
         :value="bookings"
@@ -119,6 +122,17 @@ onMounted(loadBookings)
   margin-bottom: 2rem;
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.header-actions a {
+  text-decoration: none;
+}
+
 h1 {
   font-size: 2rem;
   font-weight: 800;
@@ -165,5 +179,26 @@ h1 {
   border: 1px solid var(--gym-border);
   border-radius: 16px;
   overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 3rem 1rem;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .header-actions a,
+  .header-actions :deep(.p-button) {
+    width: 100%;
+  }
 }
 </style>
