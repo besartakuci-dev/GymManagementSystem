@@ -1,19 +1,40 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { onMounted, ref } from 'vue'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
+import Tag from 'primevue/tag'
+import Divider from 'primevue/divider'
 import { useAuthStore } from '@/stores/auth'
-import fitnesImg   from '@/assets/fitnes.png'
-import pilatesImg  from '@/assets/pilates.png'
-import yogaImg     from '@/assets/yoga.png'
+import api from '@/api/axios'
+
+import fitnesImg from '@/assets/fitnes.png'
+import pilatesImg from '@/assets/pilates.png'
+import yogaImg from '@/assets/yoga.png'
 import crossfitImg from '@/assets/crossfit.png'
+
+interface Trainer {
+  TrainerID: number
+  UserID: number
+  FirstName: string
+  LastName: string
+  Email: string
+  Specialization: string
+  Bio: string
+}
 
 const auth = useAuthStore()
 
+const trainers = ref<Trainer[]>([])
+const trainersLoading = ref(false)
+const selectedTrainer = ref<Trainer | null>(null)
+const trainerDialogVisible = ref(false)
+
 const features = [
-  { icon: 'pi pi-users',    title: '500+ Members',    desc: 'A growing community of dedicated athletes.' },
-  { icon: 'pi pi-calendar', title: '30+ Classes',     desc: 'From strength training to cardio and yoga.' },
-  { icon: 'pi pi-star',     title: 'Expert Trainers', desc: 'Certified coaches with years of experience.' },
+  { icon: 'pi pi-users', title: '500+ Members', desc: 'A growing community of dedicated athletes.' },
+  { icon: 'pi pi-calendar', title: '30+ Classes', desc: 'From strength training to cardio, yoga, and pilates.' },
+  { icon: 'pi pi-star', title: 'Expert Trainers', desc: 'Certified coaches with years of professional experience.' },
 ]
 
 const classes = [
@@ -50,21 +71,65 @@ const classes = [
     desc: 'High-intensity functional movements combining weightlifting, cardio, and gymnastics.',
   },
 ]
+
+function getInitials(trainer: Trainer) {
+  return `${trainer.FirstName?.charAt(0) ?? ''}${trainer.LastName?.charAt(0) ?? ''}`
+}
+
+function openTrainerDetails(trainer: Trainer) {
+  selectedTrainer.value = trainer
+  trainerDialogVisible.value = true
+}
+
+function getTrainerExperienceText(index: number) {
+  const experiences = ['10+ years experience', 'RYT-200 Certified Coach', 'Performance Specialist']
+  return experiences[index % experiences.length]
+}
+
+function getTrainerFocus(index: number) {
+  const focus = ['Strength & discipline', 'Mobility & control', 'Energy & endurance']
+  return focus[index % focus.length]
+}
+
+async function loadTrainers() {
+  try {
+    trainersLoading.value = true
+    const response = await api.get('/trainers/public')
+    trainers.value = response.data.data.trainers ?? []
+  } catch (error) {
+    console.error('Failed to load trainers:', error)
+    trainers.value = []
+  } finally {
+    trainersLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadTrainers()
+})
 </script>
 
 <template>
   <main>
-
     <!-- Hero -->
     <section class="hero">
+      <div class="hero-badge">
+        <i class="pi pi-bolt" />
+        Premium Fitness Experience
+      </div>
+
       <h1>TRAIN HARDER.<br />LIVE STRONGER.</h1>
-      <p>BBros Gym — where results happen. Join a community built around performance, discipline, and progress.</p>
+      <p>
+        BBros Gym is built for people who want discipline, progress, and professional coaching in every session.
+      </p>
+
       <template v-if="auth.user">
         <p class="welcome">Welcome back, <strong>{{ auth.user.FirstName }}</strong>. Ready for today's session?</p>
       </template>
+
       <template v-else>
         <RouterLink to="/login">
-          <Button label="Join Now" size="large" />
+          <Button label="Join Now" size="large" icon="pi pi-arrow-right" iconPos="right" />
         </RouterLink>
       </template>
     </section>
@@ -83,22 +148,27 @@ const classes = [
     <!-- Classes -->
     <section class="classes">
       <div class="section-header">
+        <span>Programs</span>
         <h2>Our Classes</h2>
-        <p>Find the right class for your goals and fitness level.</p>
+        <p>Choose the right training program based on your goals and fitness level.</p>
       </div>
+
       <div class="classes-grid">
         <RouterLink v-for="c in classes" :key="c.title" :to="`/classes/${c.slug}`" class="class-link">
           <Card class="class-card">
             <template #header>
               <img :src="c.image" :alt="c.title" class="class-img" />
             </template>
+
             <template #content>
               <div class="card-body">
                 <h3>{{ c.title }}</h3>
+
                 <div class="meta">
                   <span><i class="pi pi-bolt" /> {{ c.level }}</span>
                   <span><i class="pi pi-clock" /> {{ c.duration }}</span>
                 </div>
+
                 <p>{{ c.desc }}</p>
               </div>
             </template>
@@ -107,6 +177,108 @@ const classes = [
       </div>
     </section>
 
+    <!-- Trainers -->
+    <section class="trainers">
+      <div class="section-header">
+        <span>Coaching Team</span>
+        <h2>Meet Our Trainers</h2>
+        <p>
+          Our trainers combine experience, motivation, and personal guidance to help every member improve safely and consistently.
+        </p>
+      </div>
+
+      <p v-if="trainersLoading" class="loading-text">Loading trainers...</p>
+
+      <div v-else class="trainers-grid">
+        <Card
+          v-for="(trainer, index) in trainers"
+          :key="trainer.TrainerID"
+          class="trainer-card"
+          @click="openTrainerDetails(trainer)"
+        >
+          <template #content>
+            <div class="trainer-top">
+              <div class="trainer-avatar">
+                {{ getInitials(trainer) }}
+              </div>
+
+              <div class="trainer-rating">
+                <i class="pi pi-star-fill" />
+                <i class="pi pi-star-fill" />
+                <i class="pi pi-star-fill" />
+                <i class="pi pi-star-fill" />
+                <i class="pi pi-star-fill" />
+              </div>
+            </div>
+
+            <h3>{{ trainer.FirstName }} {{ trainer.LastName }}</h3>
+
+            <Tag :value="trainer.Specialization" severity="warning" class="trainer-tag" />
+
+            <p class="trainer-bio-preview">
+              {{ trainer.Bio }}
+            </p>
+
+            <div class="trainer-info-row">
+              <span><i class="pi pi-check-circle" /> {{ getTrainerExperienceText(index) }}</span>
+              <span><i class="pi pi-heart" /> {{ getTrainerFocus(index) }}</span>
+            </div>
+
+            <Button label="View Biography" icon="pi pi-user" class="view-btn" text />
+          </template>
+        </Card>
+      </div>
+    </section>
+
+   <!-- Trainer Details Dialog -->
+<Dialog
+  v-model:visible="trainerDialogVisible"
+  modal
+  class="trainer-dialog"
+  :header="selectedTrainer ? `${selectedTrainer.FirstName} ${selectedTrainer.LastName}` : 'Trainer Biography'"
+>
+  <div v-if="selectedTrainer" class="trainer-details">
+    <div class="dialog-avatar">
+      {{ getInitials(selectedTrainer) }}
+    </div>
+
+    <h2>{{ selectedTrainer.FirstName }} {{ selectedTrainer.LastName }}</h2>
+    <Tag :value="selectedTrainer.Specialization" severity="warning" />
+
+    <Divider />
+
+    <div class="dialog-section">
+      <h4>Professional Biography</h4>
+      <p>{{ selectedTrainer.Bio }}</p>
+    </div>
+
+    <div class="dialog-summary">
+      <div class="summary-item">
+        <i class="pi pi-user" />
+        <div>
+          <strong>Trainer Role</strong>
+          <span>Certified BBros Gym Trainer</span>
+        </div>
+      </div>
+
+      <div class="summary-item">
+        <i class="pi pi-star" />
+        <div>
+          <strong>Specialization</strong>
+          <span>{{ selectedTrainer.Specialization }}</span>
+        </div>
+      </div>
+
+      <div class="summary-item">
+        <i class="pi pi-check-circle" />
+        <div>
+          <strong>Coaching Approach</strong>
+          <span>Personalized training, discipline, and member progress.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</Dialog>
   </main>
 </template>
 
@@ -117,28 +289,46 @@ main {
 
 /* Hero */
 .hero {
+  min-height: 78vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 6rem 2rem 4rem;
+  padding: 7rem 2rem 5rem;
   gap: 1.5rem;
+  background:
+    radial-gradient(circle at 50% 15%, rgba(255, 122, 24, 0.14), transparent 34%),
+    linear-gradient(180deg, rgba(255, 122, 24, 0.03), transparent);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gym-orange);
+  border: 1px solid rgba(255, 122, 24, 0.35);
+  background: rgba(255, 122, 24, 0.08);
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .hero h1 {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.7rem, 6vw, 5rem);
+  font-weight: 950;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
   color: var(--gym-text);
 }
 
 .hero p {
-  max-width: 500px;
+  max-width: 620px;
   color: var(--gym-text-muted);
-  font-size: 1.05rem;
-  line-height: 1.6;
+  font-size: 1.08rem;
+  line-height: 1.7;
 }
 
 .welcome {
@@ -156,14 +346,21 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
   padding: 0 4rem 5rem;
-  max-width: 1000px;
+  max-width: 1050px;
   margin: 0 auto;
 }
 
 .feature-card {
-  background: var(--gym-surface) !important;
+  background: linear-gradient(180deg, rgba(255, 122, 24, 0.05), var(--gym-surface)) !important;
   border: 1px solid var(--gym-border) !important;
   text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gym-orange) !important;
+  box-shadow: 0 20px 45px rgba(255, 122, 24, 0.08);
 }
 
 .feature-icon {
@@ -184,34 +381,48 @@ main {
   line-height: 1.5;
 }
 
-/* Classes */
-.classes {
-  padding: 2rem 4rem 5rem;
-  max-width: 1200px;
+/* Sections */
+.classes,
+.trainers {
+  padding: 3rem 4rem 6rem;
+  max-width: 1220px;
   margin: 0 auto;
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.7rem;
+}
+
+.section-header span {
+  color: var(--gym-orange);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  font-weight: 900;
 }
 
 .section-header h2 {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
   color: var(--gym-text);
-  margin-bottom: 0.5rem;
+  margin: 0.45rem 0 0.65rem;
 }
 
 .section-header p {
   color: var(--gym-text-muted);
   font-size: 1rem;
+  max-width: 650px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
-.classes-grid {
+/* Classes */
+.classes-grid,
+.trainers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1.6rem;
 }
 
 .class-link {
@@ -219,49 +430,274 @@ main {
   color: inherit;
 }
 
-.class-card {
+.class-card,
+.trainer-card {
   background: var(--gym-surface) !important;
   border: 1px solid var(--gym-border) !important;
   overflow: hidden;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.class-link:hover .class-card {
-  transform: translateY(-2px);
+.class-link:hover .class-card,
+.trainer-card:hover {
+  transform: translateY(-5px);
   border-color: var(--gym-orange) !important;
+  box-shadow: 0 22px 55px rgba(255, 122, 24, 0.1);
 }
 
 .class-img {
   width: 100%;
-  height: 200px;
+  height: 210px;
   object-fit: cover;
   display: block;
 }
 
 .card-body h3 {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
   color: var(--gym-text);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
 }
 
 .meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .meta span {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--gym-orange);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .card-body p {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: var(--gym-text-muted);
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+/* Trainers */
+.trainers {
+  background:
+    radial-gradient(circle at top left, rgba(255, 122, 24, 0.08), transparent 32%),
+    transparent;
+}
+
+.trainer-card {
+  cursor: pointer;
+  text-align: center;
+  position: relative;
+}
+
+.trainer-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 122, 24, 0.08), transparent 38%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.trainer-card:hover::before {
+  opacity: 1;
+}
+
+.trainer-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trainer-avatar {
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 0.9rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gym-orange), #ffb15c);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 950;
+  font-size: 1.45rem;
+  box-shadow: 0 0 0 7px rgba(255, 122, 24, 0.08);
+}
+
+.trainer-rating {
+  color: var(--gym-orange);
+  font-size: 0.78rem;
+  display: flex;
+  gap: 0.18rem;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+}
+
+.trainer-card h3 {
+  font-size: 1.2rem;
+  font-weight: 850;
+  color: var(--gym-text);
+  margin-bottom: 0.55rem;
+}
+
+.trainer-tag {
+  margin-bottom: 1rem;
+}
+
+.trainer-bio-preview {
+  font-size: 0.9rem;
+  color: var(--gym-text-muted);
+  line-height: 1.65;
+  min-height: 72px;
+  margin-bottom: 1.1rem;
+}
+
+.trainer-info-row {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.trainer-info-row span {
+  color: var(--gym-text-muted);
+  font-size: 0.84rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.trainer-info-row i {
+  color: var(--gym-orange);
+}
+
+.view-btn {
+  color: var(--gym-orange) !important;
+  font-weight: 800;
+}
+
+.loading-text {
+  text-align: center;
+  color: var(--gym-text-muted);
+}
+
+/* Dialog */
+:deep(.trainer-dialog) {
+  width: 560px;
+  max-width: 92vw;
+}
+
+:deep(.p-dialog) {
+  background: var(--gym-surface);
+  border: 1px solid var(--gym-border);
+  color: var(--gym-text);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:deep(.p-dialog-header) {
+  background: linear-gradient(90deg, rgba(255, 122, 24, 0.15), var(--gym-surface));
+  color: var(--gym-text);
+  border-bottom: 1px solid var(--gym-border);
+}
+
+:deep(.p-dialog-content) {
+  background: var(--gym-surface);
+  color: var(--gym-text);
+}
+
+.trainer-details {
+  text-align: center;
+}
+
+.dialog-avatar {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gym-orange), #ffb15c);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 950;
+  font-size: 1.75rem;
+  box-shadow: 0 0 0 9px rgba(255, 122, 24, 0.09);
+}
+
+.trainer-details h2 {
+  color: var(--gym-text);
+  margin-bottom: 0.6rem;
+}
+
+.dialog-section {
+  text-align: left;
+  margin: 1.3rem 0;
+}
+
+.dialog-section h4 {
+  color: var(--gym-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.82rem;
+  margin-bottom: 0.65rem;
+}
+
+.dialog-section p {
+  color: var(--gym-text-muted);
+  line-height: 1.75;
+}
+
+.dialog-summary {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.summary-item {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--gym-border);
+  border-radius: 14px;
+  padding: 1rem;
+  text-align: left;
+}
+
+.summary-item i {
+  color: var(--gym-orange);
+  font-size: 1.1rem;
+  margin-top: 0.2rem;
+}
+
+.summary-item strong {
+  display: block;
+  color: var(--gym-text);
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.summary-item span {
+  color: var(--gym-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .features,
+  .classes,
+  .trainers {
+    padding-left: 1.3rem;
+    padding-right: 1.3rem;
+  }
+
+  .hero {
+    padding-top: 5rem;
+  }
 }
 </style>
