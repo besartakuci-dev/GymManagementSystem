@@ -28,7 +28,7 @@ const router = Router();
 
 router.get('/dashboard', dashboardController);
 router.get('/my-bookings', authenticate, authorize('member'), myBookingsController);
-router.get('/:id/bookings', classBookingsController);
+router.get('/:id/bookings', authenticate, authorize('admin', 'trainer'), classBookingsController);
 
 router.get('/', listClassesController);
 router.get(

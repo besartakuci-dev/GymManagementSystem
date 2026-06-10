@@ -60,7 +60,9 @@ INSERT INTO Memberships (MembershipID, UserID, PlanID, StartDate, EndDate, Statu
 
 INSERT INTO Class_Types (ClassTypeID, TypeName, Category, Description, Price) VALUES
 (1, 'Yoga',              'Yoga', 'Mobility, balance, and mindful movement.', 8.00),
-(2, 'Pilates',           'Pilates', 'Core strength, posture, and controlled movement.', 10.00);
+(2, 'Pilates',           'Pilates', 'Core strength, posture, and controlled movement.', 10.00),
+(3, 'Fitness',           'Fitness', 'Full-body strength and conditioning to build muscle and burn fat.', 10.00),
+(4, 'CrossFit',          'CrossFit', 'High-intensity functional training: weightlifting, cardio, and gymnastics.', 12.00);
 
 
 -- CLASSES  (each row = one scheduled occurrence)
@@ -76,7 +78,12 @@ INSERT INTO Classes (ClassID, Name, ClassTypeID, TrainerID, StartDateTime, EndDa
 (6, 'Yoga Beginner', 1, 1, '2026-06-12 17:00:00', '2026-06-12 18:00:00', 12, 8.00, 'Salla 1',  'scheduled'),
 (7, 'Pilates Balance', 2, 3, '2026-06-13 07:00:00', '2026-06-13 07:50:00', 25, 10.00, 'Salla 3',  'scheduled'),
 (8, 'Pilates Flow', 2, 2, '2026-06-14 17:00:00', '2026-06-14 17:45:00', 15, 10.00, 'Salla 2',  'scheduled'),
-(9, 'Yoga Mobility', 1, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 8.00, 'Salla 1',  'scheduled');
+(9, 'Yoga Mobility', 1, 1, '2026-06-15 11:00:00', '2026-06-15 12:00:00', 10, 8.00, 'Salla 1',  'scheduled'),
+-- Fitness & CrossFit
+(10, 'Strength & Conditioning', 3, 1, '2026-06-16 18:00:00', '2026-06-16 19:00:00', 20, 10.00, 'Salla 1',  'scheduled'),
+(11, 'HIIT Burn',               3, 3, '2026-06-17 07:00:00', '2026-06-17 07:45:00', 18, 10.00, 'Salla 2',  'scheduled'),
+(12, 'CrossFit WOD',            4, 1, '2026-06-16 19:30:00', '2026-06-16 20:30:00', 15, 12.00, 'Salla 3',  'scheduled'),
+(13, 'CrossFit Endurance',      4, 3, '2026-06-18 18:00:00', '2026-06-18 19:00:00', 16, 12.00, 'Salla 1',  'scheduled');
 
 
 -- BOOKINGS

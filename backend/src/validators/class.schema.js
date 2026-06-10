@@ -3,7 +3,7 @@ import { z } from 'zod';
 const statusSchema = z.enum(['scheduled', 'cancelled', 'completed']);
 const paymentMethodSchema = z.enum(['cash', 'card', 'bank_transfer']);
 const idParam = z.coerce.number().int().positive('Invalid class id');
-const categorySchema = z.string().trim().min(1, 'Class type is required').max(60, 'Class type cannot exceed 60 characters');
+const categorySchema = z.enum(['Yoga', 'Pilates']);
 
 const timeSchema = (label) =>
   z
@@ -41,13 +41,14 @@ function combineDateTime(date, time) {
   return new Date(`${date}T${time}:00`);
 }
 
-function validateClassTime(data, context) {
+function validateClassTime(data, context, { allowPast = false } = {}) {
   const startDateTime = combineDateTime(data.date, data.startTime);
   const endDateTime = combineDateTime(data.date, data.endTime);
 
   if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) return;
 
-  if (startDateTime < new Date()) {
+  // Past-dated classes are rejected on CREATE, but allowed on EDIT (admins may adjust past classes).
+  if (!allowPast && startDateTime < new Date()) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Class date and start time cannot be in the past',
@@ -65,12 +66,12 @@ function validateClassTime(data, context) {
 }
 
 export const createClassSchema = z.object({
-  body: baseClassBody.superRefine(validateClassTime),
+  body: baseClassBody.superRefine((data, ctx) => validateClassTime(data, ctx, { allowPast: false })),
 });
 
 export const updateClassSchema = z.object({
   params: z.object({ id: idParam }),
-  body: baseClassBody.superRefine(validateClassTime),
+  body: baseClassBody.superRefine((data, ctx) => validateClassTime(data, ctx, { allowPast: true })),
 });
 
 export const classIdSchema = z.object({

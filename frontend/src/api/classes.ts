@@ -19,4 +19,5 @@ export const createClass = (payload: ClassPayload) => api.post('/classes', paylo
 export const updateClass = (id: number, payload: ClassPayload) => api.put(`/classes/${id}`, payload)
 export const cancelClass = (id: number) => api.put(`/classes/${id}/cancel`)
 export const deleteClass = (id: number) => api.delete(`/classes/${id}`)
+export const getClassBookingsById = (id: number) => api.get(`/classes/${id}/bookings`)
 export const bookClass = (id: number) => api.post(`/classes/${id}/join`, { paymentMethod: 'card' })

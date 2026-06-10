@@ -161,6 +161,26 @@ async function handleRegister() {
   display: block;
 }
 
+/* dark gradient for depth — lighter than the spec's 0.85/0.6/0.8 hero overlay
+   so the cover artwork stays visible */
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.65) 0%, rgba(10, 10, 10, 0.35) 50%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* orange accent line along the bottom of the photo panel */
+.cover::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--gym-orange), transparent);
+}
+
 /* Right panel */
 .card {
   display: flex;
@@ -178,6 +198,7 @@ async function handleRegister() {
 }
 
 .tabs button {
+  position: relative;
   flex: 1;
   background: none;
   border: none;
@@ -186,20 +207,41 @@ async function handleRegister() {
   font-size: 0.95rem;
   color: var(--gym-text-muted);
   box-shadow: none;
-  transition: color 0.15s;
+  transition: var(--gym-transition);
+}
+
+/* center-growing orange underline */
+.tabs button::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  transform: translateX(-50%);
+  background: var(--gym-orange);
+  border-radius: 2px;
+  transition: var(--gym-transition);
+}
+
+.tabs button:hover {
+  color: var(--gym-text);
 }
 
 .tabs button.active {
   color: var(--gym-orange);
   font-weight: 600;
-  border-bottom: 2px solid var(--gym-orange);
-  margin-bottom: -1px;
+}
+
+.tabs button.active::after {
+  width: 100%;
 }
 
 form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  animation: fadeInUp 0.6s ease-out both;
 }
 
 .details {

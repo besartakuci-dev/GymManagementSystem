@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
+import { vReveal, vCountup } from '@/composables/useMotion'
 
 const values = [
   { icon: 'pi pi-bolt',       title: 'Performance First',  desc: 'Every programme, every session, every rep is designed around measurable results.' },
@@ -28,7 +29,7 @@ const team = [
         BBros Gym was founded with one belief: that a great gym is more than equipment —
         it's the coaches, the culture, and the community that make people come back every day.
       </p>
-      <RouterLink to="/login">
+      <RouterLink to="/login" class="hero-cta">
         <Button label="Join the Community" size="large" />
       </RouterLink>
     </section>
@@ -36,29 +37,29 @@ const team = [
     <!-- Stats bar -->
     <section class="stats-bar">
       <div class="stat">
-        <span class="stat-number">500+</span>
+        <span class="stat-number" v-countup>500+</span>
         <span class="stat-label">Active Members</span>
       </div>
       <div class="divider" />
       <div class="stat">
-        <span class="stat-number">30+</span>
+        <span class="stat-number" v-countup>30+</span>
         <span class="stat-label">Weekly Classes</span>
       </div>
       <div class="divider" />
       <div class="stat">
-        <span class="stat-number">3</span>
+        <span class="stat-number" v-countup>3</span>
         <span class="stat-label">Expert Trainers</span>
       </div>
       <div class="divider" />
       <div class="stat">
-        <span class="stat-number">5+</span>
+        <span class="stat-number" v-countup>5+</span>
         <span class="stat-label">Years Running</span>
       </div>
     </section>
 
     <!-- Mission -->
     <section class="mission">
-      <div class="mission-text">
+      <div class="mission-text" v-reveal>
         <span class="eyebrow">Our Mission</span>
         <h2>We exist to make you stronger — in every sense of the word.</h2>
         <p>
@@ -69,7 +70,7 @@ const team = [
         </p>
       </div>
       <div class="values-grid">
-        <Card v-for="v in values" :key="v.title" class="value-card">
+        <Card v-for="v in values" :key="v.title" class="value-card" v-reveal>
           <template #content>
             <i :class="v.icon" class="value-icon" />
             <h3>{{ v.title }}</h3>
@@ -81,13 +82,13 @@ const team = [
 
     <!-- Team -->
     <section class="team">
-      <div class="section-header">
+      <div class="section-header" v-reveal>
         <span class="eyebrow">The Team</span>
         <h2>Meet Your Coaches</h2>
         <p>Certified, experienced, and genuinely invested in your progress.</p>
       </div>
       <div class="team-grid">
-        <Card v-for="member in team" :key="member.name" class="trainer-card">
+        <Card v-for="member in team" :key="member.name" class="trainer-card" v-reveal>
           <template #content>
             <div class="trainer-avatar">
               <i :class="member.icon" />
@@ -101,7 +102,7 @@ const team = [
     </section>
 
     <!-- CTA -->
-    <section class="cta">
+    <section class="cta" v-reveal>
       <h2>Ready to start?</h2>
       <p>Create an account and book your first class today — no commitment needed.</p>
       <RouterLink to="/login">
@@ -119,12 +120,15 @@ const team = [
 }
 
 .eyebrow {
-  display: block;
+  display: inline-block;
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.2em;
   color: var(--gym-orange);
+  background: var(--gym-orange-wash);
+  padding: 4px 14px;
+  border-radius: 20px;
   margin-bottom: 0.75rem;
 }
 
@@ -138,12 +142,17 @@ const team = [
   gap: 1.25rem;
 }
 
+.hero .eyebrow {
+  animation: fadeInUp 1s ease both;
+}
+
 .hero h1 {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--gym-text);
+  animation: fadeInUp 1s ease 0.2s both;
 }
 
 .hero p {
@@ -151,6 +160,11 @@ const team = [
   color: var(--gym-text-muted);
   font-size: 1.05rem;
   line-height: 1.7;
+  animation: fadeInUp 1s ease 0.4s both;
+}
+
+.hero-cta {
+  animation: fadeInUp 1s ease 0.6s both;
 }
 
 /* Stats bar */
@@ -227,6 +241,13 @@ const team = [
 .value-card {
   background: var(--gym-surface) !important;
   border: 1px solid var(--gym-border) !important;
+  transition: var(--gym-transition);
+}
+
+/* feature-row hover: slide right + orange border tint */
+.value-card:hover {
+  transform: translateX(5px);
+  border-color: var(--gym-orange-border) !important;
 }
 
 .value-icon {
@@ -263,10 +284,22 @@ const team = [
 }
 
 .section-header h2 {
+  display: inline-block;
   font-size: 2rem;
   font-weight: 800;
   color: var(--gym-text);
   margin-bottom: 0.5rem;
+}
+
+/* orange underline bar beneath the section title */
+.section-header h2::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 3px;
+  background: var(--gym-orange);
+  border-radius: 2px;
+  margin: 12px auto 0;
 }
 
 .section-header p {
@@ -282,9 +315,36 @@ const team = [
 }
 
 .trainer-card {
+  position: relative;
+  overflow: hidden;
   background: var(--gym-surface-raised) !important;
   border: 1px solid var(--gym-border) !important;
   text-align: center;
+  transition: var(--gym-transition);
+}
+
+/* top accent glow bar, hidden at rest */
+.trainer-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gym-orange), transparent);
+  opacity: 0;
+  transition: var(--gym-transition);
+}
+
+.trainer-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--gym-orange-border-soft) !important;
+  box-shadow: var(--gym-shadow-lift);
+}
+
+.trainer-card:hover::before {
+  opacity: 1;
 }
 
 .trainer-avatar {
@@ -297,6 +357,11 @@ const team = [
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
+  transition: var(--gym-transition);
+}
+
+.trainer-card:hover .trainer-avatar {
+  box-shadow: 0 6px 20px var(--gym-orange-glow);
 }
 
 .trainer-avatar i {

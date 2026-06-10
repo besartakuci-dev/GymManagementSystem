@@ -17,3 +17,118 @@ html, body {
 #app {
   height: 100%;
 }
+
+/* one easing on everything interactive (classes doubled so these beat the
+   runtime-injected PrimeVue theme rules, which tie on single-class specificity) */
+a,
+.p-button.p-button,
+.p-card.p-card,
+.p-inputtext.p-inputtext,
+.p-select.p-select,
+.p-textarea.p-textarea {
+  transition: var(--gym-transition);
+}
+
+/* solid primary buttons only: lift + orange glow on hover
+   (outlined/text/secondary/danger keep the theme's own hover treatment) */
+.p-button:not(:disabled):not(:is(.p-button-outlined, .p-button-text, .p-button-link, .p-button-secondary, .p-button-danger, .p-button-warn, .p-button-info, .p-button-help, .p-button-success, .p-button-contrast)):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gym-shadow-glow);
+}
+
+.p-button:not(:disabled):not(:is(.p-button-outlined, .p-button-text, .p-button-link, .p-button-secondary, .p-button-danger, .p-button-warn, .p-button-info, .p-button-help, .p-button-success, .p-button-contrast)):active {
+  transform: translateY(0);
+}
+
+/* ── IronForge-style buttons, mapped to GymCore orange ─────────────────────
+   Two opt-in classes (used on the hero CTAs + nav auth buttons). Selectors are
+   doubled with .p-button / .p-button-outlined so they beat the runtime-injected
+   PrimeVue theme rules. */
+
+/* Primary CTA: 135° orange gradient fill, bold uppercase label, 8px radius.
+   The lift + orange glow on hover comes from the solid-primary rule above; the
+   explicit :hover here re-asserts the gradient so the theme's flat hover bg
+   doesn't replace it. */
+.p-button.gym-btn-primary,
+.p-button.gym-btn-primary:enabled {
+  background: linear-gradient(135deg, var(--gym-orange), var(--gym-orange-hover));
+  border-color: var(--gym-orange);
+  color: #fff;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.p-button.gym-btn-primary:enabled:hover {
+  background: linear-gradient(135deg, var(--gym-orange), var(--gym-orange-hover));
+  border-color: var(--gym-orange);
+  color: #fff;
+}
+
+/* Secondary / nav button: transparent with a faint white border; subtle white
+   fill + brighter border on hover (no orange glow — .p-button-outlined is
+   excluded from the solid-primary glow rule above). */
+.p-button.gym-btn-outline.p-button-outlined,
+.p-button.gym-btn-outline.p-button-outlined:enabled {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.p-button.gym-btn-outline.p-button-outlined:enabled:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #ffffff;
+  color: #fff;
+  box-shadow: none;
+}
+
+/* inputs: orange focus ring (doubled to beat the theme's box-shadow: none) */
+.p-inputtext.p-inputtext:enabled:focus {
+  border-color: var(--gym-orange);
+  box-shadow: var(--gym-focus-ring);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; transform: scaleY(0.5); }
+  50%      { opacity: 1;   transform: scaleY(1); }
+}
+
+/* scroll reveal: classes are added/removed by the v-reveal directive.
+   !important so the 0.6s entrance wins over component transition shorthands;
+   the directive strips both classes once the entrance finishes. */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out !important;
+}
+
+.reveal.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

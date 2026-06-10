@@ -5,6 +5,7 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import DataView from 'primevue/dataview'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import { getDashboard, getClassBookings, getUsers} from '@/api/admin'
@@ -30,6 +31,35 @@ const savingSchedule = ref(false)
 
 // Remove hard-deletes the row; this also hides any stray 'cancelled' classes from older data.
 const visibleSchedules = computed(() => schedules.value.filter((s: any) => s.status !== 'Cancelled'))
+
+// --- Class-bookings card display helpers (presentation only — never mutate fetched values) ---
+function occupancyPct(b: any): number {
+  const cap = Number(b.MaxCapacity) || 0
+  const booked = Number(b.BookedUsers) || 0
+  if (cap <= 0) return 0
+  return Math.min(100, Math.round((booked / cap) * 100))
+}
+// 'scheduled' is the normal state → no badge; only deviations (cancelled/completed) get one.
+const DEFAULT_CLASS_STATUS = 'scheduled'
+function showClassBadge(status: string): boolean {
+  return !!status && status !== DEFAULT_CLASS_STATUS
+}
+function classStatusLabel(status: string): string {
+  switch (status) {
+    case 'scheduled': return 'Scheduled'
+    case 'cancelled': return 'Cancelled'
+    case 'completed': return 'Completed'
+    default: return status
+  }
+}
+type BkSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary'
+function classStatusSeverity(status: string): BkSeverity {
+  switch (status) {
+    case 'cancelled': return 'danger'
+    case 'completed': return 'secondary'
+    default: return 'info'
+  }
+}
 
 const statCards = [
   { key: 'totalMembers',      label: 'Total Members',      icon: 'pi pi-users' },
@@ -92,7 +122,7 @@ async function addSchedule() {
   try {
     await createClass({
       name:        scheduleForm.value.name,
-      category:    scheduleForm.value.category as 'Yoga' | 'Pilates',
+      category:    scheduleForm.value.category,
       date:        scheduleForm.value.date,
       startTime:   scheduleForm.value.startTime,
       endTime:     scheduleForm.value.endTime,
@@ -236,13 +266,41 @@ onMounted(loadAll)
       <div class="section-header">
         <h2>Class Bookings</h2>
       </div>
-      <DataTable :value="classBookings" :loading="loading" stripedRows paginator :rows="5" class="data-table">
-        <Column field="ClassName"   header="Class" />
-        <Column field="Room"        header="Room" />
-        <Column field="Status"      header="Status" />
-        <Column field="MaxCapacity" header="Capacity" />
-        <Column field="BookedUsers" header="Booked Users" />
-      </DataTable>
+      <p v-if="loading && !classBookings.length" class="bk-empty">Loading…</p>
+      <p v-else-if="!classBookings.length" class="bk-empty">No classes scheduled yet.</p>
+      <DataView
+        v-else
+        :value="classBookings"
+        :rows="5"
+        paginator
+        layout="list"
+        dataKey="ClassID"
+        class="bk-view"
+      >
+        <template #list="{ items }">
+          <div class="bk-grid">
+            <article v-for="b in items" :key="b.ClassID" class="bk-card">
+              <div class="bk-top">
+                <h3 class="bk-name">{{ b.ClassName }}</h3>
+                <Tag
+                  v-if="showClassBadge(b.Status)"
+                  :value="classStatusLabel(b.Status)"
+                  :severity="classStatusSeverity(b.Status)"
+                  class="bk-tag"
+                />
+              </div>
+              <div class="bk-occ">
+                <div class="bk-occ-head">
+                  <span class="bk-occ-count">{{ b.BookedUsers }} / {{ b.MaxCapacity }}</span>
+                  <span class="bk-occ-label">booked</span>
+                </div>
+                <div class="bk-bar"><div class="bk-bar-fill" :style="{ width: occupancyPct(b) + '%' }" /></div>
+              </div>
+              <p class="bk-room"><i class="pi pi-map-marker" /> {{ b.Room }}</p>
+            </article>
+          </div>
+        </template>
+      </DataView>
     </div>
 
     <!-- Users -->
@@ -444,6 +502,118 @@ h2 {
   background: var(--gym-surface-raised) !important;
   border: 1px solid var(--gym-border) !important;
   border-radius: 8px;
+}
+
+/* Class Bookings cards */
+.bk-empty {
+  color: var(--gym-text-muted);
+  font-size: 0.875rem;
+  padding: 0.5rem 0;
+}
+
+.bk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.bk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--gym-surface-raised);
+  border: 1px solid var(--gym-border);
+  border-left: 3px solid var(--gym-orange);
+  border-radius: 14px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bk-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gym-orange);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.bk-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bk-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--gym-text);
+}
+
+.bk-tag {
+  flex-shrink: 0;
+  text-transform: capitalize;
+}
+
+.bk-occ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bk-occ-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.bk-occ-count {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--gym-orange);
+}
+
+.bk-occ-label {
+  font-size: 0.8rem;
+  color: var(--gym-text-muted);
+}
+
+.bk-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gym-border);
+  overflow: hidden;
+}
+
+.bk-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gym-orange);
+  transition: width 0.3s ease;
+}
+
+.bk-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--gym-text-muted);
+}
+
+.bk-room i {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.bk-view :deep(.p-dataview),
+.bk-view :deep(.p-dataview-content) {
+  background: transparent;
+  border: none;
+}
+
+.bk-view :deep(.p-paginator) {
+  background: transparent;
+  margin-top: 1.25rem;
 }
 
 @media (max-width: 600px) {
